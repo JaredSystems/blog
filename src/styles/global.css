@@ -23,7 +23,7 @@ body {
 .nav {
   display: flex;
   flex: auto;
-  gap: 1rem; /* optional: spacing between links */
+  gap: 1rem;
 }
 
 a,

@@ -1,0 +1,32 @@
+---
+import "../styles/global.css";
+import ResourceContent from "../content/resources.md";
+
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width" />
+		<link rel="icon" type="image/svg+xml" href="" />
+		<meta name="generator" content={Astro.generator} />
+		<title>Astro Basics</title>
+	</head>
+  <body>
+	<h2>jared</h2>
+<nav class="nav">
+  <div><a href="/" >home</a></div>
+  	<div><a href="/resources" class="active">resources</a></div>
+	<div><a href="https://github.com/JaredSystems">github</a></div>
+	
+	</nav>
+
+	<main class="main">
+        <ResourceContent />
+	</main>
+
+
+  </body>
+</html>
+
