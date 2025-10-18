@@ -1,0 +1,30 @@
+---
+import "../../styles/global.css";
+
+import { getCollection } from "astro:content";
+
+export async function getStaticPaths() {
+  const posts = await getCollection("writings");
+  return posts.map((post) => ({
+    params: { slug: post.slug },
+    props: { post },
+  }));
+}
+
+const { post } = Astro.props;
+const { Content } = await post.render();
+---
+
+<html>
+  <head>
+    <title>{post.data.title}</title>
+  </head>
+  <body>
+    <main>
+      <h1>{post.data.title}</h1>
+      <p><small>{post.data.article_date.toDateString()}</small></p>
+      <p>{post.data.description}</p>
+      <Content />
+    </main>
+  </body>
+</html>

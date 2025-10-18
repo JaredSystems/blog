@@ -1,5 +1,8 @@
 ---
 import "../styles/global.css";
+import { getCollection } from "astro:content";
+const writings = await getCollection("writings");
+writings.sort((a, b) => b.data.article_date.getTime() - a.data.article_date.getTime());
 
 ---
 
@@ -10,7 +13,7 @@ import "../styles/global.css";
 		<meta name="viewport" content="width=device-width" />
 		<link rel="icon" type="image/svg+xml" href="" />
 		<meta name="generator" content={Astro.generator} />
-		<title>Astro Basics</title>
+		<title>jaredsystems</title>
 	</head>
   <body>
 	<h2>jared</h2>
@@ -31,7 +34,7 @@ import "../styles/global.css";
 
 		<p>Utlimately, I ended up back in uni to study computer and information technology hoping to land a job, as the stigma of not having 
 			a bachelors was creeping up on me. Shortly after, I landed a software internship at 
-			<a href="https://en.wikipedia.org/wiki/Truist">Truist</a> on their enterprise engineering team. 
+			<a href="https://en.wikipedia.org/wiki/Truist">truist</a> on their enterprise engineering team. 
         	All these nice buzzwords just to say that I did nothing all internship and don't really want to go back to corporate.
 	</p>
 
@@ -50,6 +53,44 @@ import "../styles/global.css";
 
 	<section class="section">
 		<h1>Projects</h1>
+		<p>Things i've worked on or am working on (date desc order)</p>
+		<h3>Full Stack</h3>
+		<div>
+			<ul><a href="https://www.marmotsystems.com/">marmot systems</a> - direct store delivery (dsd) and accounting
+				software optimized for speed, simplictity, and reliability. 
+			</ul>
+
+			<ul><a href="https://www.galaxitylearning.com/signin">galaxity</a> - AI math tutoring app integrated
+				into school learning management systems. Based off the octalysis framework.
+			</ul>
+
+
+
+			<ul><a href="https://www.freemindrecovery.com/">freemind</a> - free mental health platform 
+				to support those struggling with anxiety disorders.
+			</ul>
+
+		</div>
+
+			<h3>Security</h3>
+		<div>
+				<ul><a href="https://github.com/JaredSystems/c-cryptography-library">cryptography library</a> - supports 2 encryption 
+					ciphers and 1 key exchange algorithm (Diffie-Hellman). 
+			</ul>
+		</div>
+	</section>
+
+	<section class="section">
+		<h1>Writings</h1>
+		<ul>
+    {writings.map((post) => (
+      <li>
+        <a href={`/writings/${post.slug}/`}>{post.data.title}</a>
+        <small> — {post.data.article_date.toDateString()}</small>
+        <p>{post.data.description}</p>
+      </li>
+    ))}
+  </ul>
 	</section>
   </body>
 </html>

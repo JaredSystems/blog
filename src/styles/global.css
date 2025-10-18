@@ -20,6 +20,12 @@ body {
   color: #dce1ff;
 }
 
+pre.astro-code {
+  padding: 1rem; /* the padding you want */
+  border-radius: 0.5rem;
+  overflow: auto;
+}
+
 .nav {
   display: flex;
   flex: auto;
