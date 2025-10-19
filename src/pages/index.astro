@@ -2,7 +2,13 @@
 import "../styles/global.css";
 import { getCollection } from "astro:content";
 const writings = await getCollection("writings");
+
+const getDate = (d: string | Date) => (typeof d === "string" ? new Date(d) : d);
+
 writings.sort((a, b) => b.data.article_date.getTime() - a.data.article_date.getTime());
+
+const fmtUTC = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeZone: "UTC" });
+const formatDateUTC = (d: string | Date) => fmtUTC.format(getDate(d));
 
 ---
 
@@ -53,7 +59,7 @@ writings.sort((a, b) => b.data.article_date.getTime() - a.data.article_date.getT
 
 	<section class="section">
 		<h1>Projects</h1>
-		<p>Things i've worked on or am working on (date desc order)</p>
+		<p>Things i've created or am creating (date desc order)</p>
 		<h3>Full Stack</h3>
 		<div>
 			<ul><a href="https://www.marmotsystems.com/">marmot systems</a> - direct store delivery (dsd) and accounting
@@ -86,7 +92,7 @@ writings.sort((a, b) => b.data.article_date.getTime() - a.data.article_date.getT
     {writings.map((post) => (
       <li>
         <a href={`/writings/${post.slug}/`}>{post.data.title}</a>
-        <small> — {post.data.article_date.toDateString()}</small>
+            <small> — {formatDateUTC(post.data.article_date)}</small>
         <p>{post.data.description}</p>
       </li>
     ))}
