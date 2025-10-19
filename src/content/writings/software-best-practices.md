@@ -7,7 +7,7 @@ tags: [typescript, nodejs, sql, startups]
 
 ---
 
-These are non-dogmatic best practices I follow when building out software in the startup space. Obviously you shouldn't follow these religiously, but these pratices generally work well for me and my team. If you nitpick trivialities than you should probably skip this site in its entirety. Now, if I did make a mistake, completely make something up, or if you have better solutions, please correct me and message me on twitter [@jaredsystems](https://x.com/jaredsystems).
+These are non-dogmatic best practices I follow when building out software in the startup space. Obviously you shouldn't follow these religiously, but these pratices generally work well for me and my team. If you nitpick trivialities than you should probably skip this site in its entirety. Now, if I did make a mistake, completely make something up, or if you have better solutions, please correct me and message me on x.com [@jaredsystems](https://x.com/jaredsystems).
 
 ![tweet](../../assets/software-best-practices/tweet-trival.png)
 
