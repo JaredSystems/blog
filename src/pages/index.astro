@@ -10,7 +10,7 @@ writings.sort((a, b) => b.data.article_date.getTime() - a.data.article_date.getT
 const fmtUTC = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeZone: "UTC" });
 const formatDateUTC = (d: string | Date) => fmtUTC.format(getDate(d));
 
-import QuoteContent from "../content/main_quote.md";
+import QuoteContent from "../components/main_quote.md";
 
 ---
 
