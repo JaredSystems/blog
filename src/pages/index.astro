@@ -2,7 +2,6 @@
 import "../styles/global.css";
 import { getCollection } from "astro:content";
 const writings = await getCollection("writings");
-import QuoteContent from "../components/quote.md"
 
 const getDate = (d: string | Date) => (typeof d === "string" ? new Date(d) : d);
 
@@ -10,6 +9,8 @@ writings.sort((a, b) => b.data.article_date.getTime() - a.data.article_date.getT
 
 const fmtUTC = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeZone: "UTC" });
 const formatDateUTC = (d: string | Date) => fmtUTC.format(getDate(d));
+
+import QuoteContent from "../content/main_quote.md";
 
 ---
 
