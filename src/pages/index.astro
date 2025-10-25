@@ -2,7 +2,7 @@
 import "../styles/global.css";
 import { getCollection } from "astro:content";
 const writings = await getCollection("writings");
-import QuoteContent from "../content/quote.md"
+import QuoteContent from "../components/quote.md"
 
 const getDate = (d: string | Date) => (typeof d === "string" ? new Date(d) : d);
 
