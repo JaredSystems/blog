@@ -2,6 +2,7 @@
 import "../styles/global.css";
 import { getCollection } from "astro:content";
 const writings = await getCollection("writings");
+import QuoteContent from "../content/quote.md"
 
 const getDate = (d: string | Date) => (typeof d === "string" ? new Date(d) : d);
 
@@ -32,6 +33,8 @@ const formatDateUTC = (d: string | Date) => fmtUTC.format(getDate(d));
 	</nav>
 
 	<main class="main">
+
+		<QuoteContent/>
 
 		<p>I'm 25 years old, based out of miami fl, and enjoy programming. I got into programming in late 2022 when I wanted to build a 
 			<a href="https://www.freemindrecovery.com/">mental health platform</a>  for myself. 

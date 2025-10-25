@@ -1,0 +1,169 @@
+<!DOCTYPE html><html> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width"><link rel="icon" type="image/svg+xml" href=""><meta name="generator" content="Astro v5.14.5"><title>my software best practices for junior engineers and bootstrapped technical founders</title><style>body{font-feature-settings:"liga","tnum","case","calt","zero","ss01","locl";text-rendering:optimizelegibility;-webkit-font-smoothing:antialiased;-webkit-overflow-scrolling:touch;-webkit-text-size-adjust:100%;scroll-behavior:smooth;font-family:-apple-system,BlinkMacSystemFont,Iosevka Aile,Roboto,Segoe UI,Helvetica,Arial,sans-serif;margin:auto;padding:20px;max-width:65ch;text-align:left;background-color:#14141d;word-wrap:break-word;overflow-wrap:break-word;line-height:1.5;color:#dce1ff}pre.astro-code{padding:1rem;border-radius:.5rem;overflow:auto}.nav{display:flex;flex:auto;gap:1rem}a,a:visited,a:hover,a:active{color:#51f9ff;text-decoration:none}a.active{text-decoration:underline;font-weight:700}.main{margin-top:2rem}.section{margin-top:3rem}img{max-width:100%;height:auto;display:block}
+</style></head> <body> <h2>jared</h2> <nav class="nav"> <div><a href="/">home</a></div> <div><a href="/resources">resources</a></div> <div><a href="https://github.com/JaredSystems">github</a></div> <div><a href="https://x.com/jaredsystems">x.com</a></div> </nav> <main> <h1>my software best practices for junior engineers and bootstrapped technical founders</h1> <small>Oct 19, 2025</small> <p>Includes language specific and agnostic best practices for building b2b software.</p> <hr>
+<p>These are non-dogmatic best practices I follow when building out software in the startup space. Obviously you shouldn’t follow these religiously, but these pratices generally work well for me and my team. If you nitpick trivialities than you should probably skip this site in its entirety. Now, if I did make a mistake, completely make something up, or if you have better solutions, please correct me and message me on x.com <a href="https://x.com/jaredsystems">@jaredsystems</a>.</p>
+<p><img alt="tweet" loading="lazy" decoding="async" fetchpriority="auto" width="585" height="284" src="/_astro/tweet-trival.CP6mOpLj_1jwkJo.webp" ></p>
+<p>Some context before I start since I’ll be referencing my startup marmot systems often. Marmot is a direct store delivery software (dsd). Dsd is just a distribution model where suppliers distribute products to retail. The software consists of a driver mobile app and an admin web portal. Driver features must work offline while the admin web portal is obviously dependent on the cloud.</p>
+<h1 id="who-is-this-article-for">Who is this article for</h1>
+<p><strong>Bootstrapped founders</strong>: You are bootstrapping a (preferably) B2B saas as a solo founder or with a small team.</p>
+<p><strong>Junior developers</strong>: You want to jump the awkward bridge that stands between junior and senior engineer. Being a mid level developer is a weird place to be in especially in this senior only market.</p>
+<h1 id="stack">Stack</h1>
+<p>Keep it stupid simple, especially if you are in the MVP phase of your product. This is what I went with for marmot.</p>
+<p><strong>Frontend</strong></p>
+<ul>
+<li>Typescript + Next.js</li>
+</ul>
+<p><strong>Backend</strong></p>
+<ul>
+<li>Typescript + Node.js</li>
+<li>Express</li>
+</ul>
+<p><strong>Mobile App</strong></p>
+<ul>
+<li>Typescript + React Native</li>
+</ul>
+<p><strong>Database</strong></p>
+<ul>
+<li>PostgreSQL</li>
+<li>Sqlite: embedded within the mobile app</li>
+</ul>
+<p><strong>Validation</strong></p>
+<ul>
+<li><a href="https://zod.dev/">Zod</a></li>
+</ul>
+<h1 id="1-business-requirements">1. Business Requirements</h1>
+<p>Write down your business requirements before you write a single line of code. Doing this will make everything else clearer and
+simpler down the road. If you are building out an mvp for a product, than I suggest speed-running or skipping
+this since your app probably won’t hit product market fit. If you are close to hitting pmf or are already established than
+you need to start adopting this practice.</p>
+<h1 id="2-repos">2. Repos</h1>
+<p>You should probably go with a monorepo setup due to simplicity. If you want models to follow, know that most large companies go
+with monorepo setups. Although, if your project does scale it could become more difficult to maintain.</p>
+<p><img alt="repo" loading="lazy" decoding="async" fetchpriority="auto" width="605" height="424" src="/_astro/repo.IrgMmlWr_a9O31.webp" ></p>
+<p>I went with a polyrepo setup for decoupling reasons. It does get annoying sharing libraries and apis between repos,
+but overall this structure works fine for me. There is higher mainteance with polyrepos. If I could start from scratch
+I’d probably go with a monorepo setup.</p>
+<p><a href="https://dev.to/bitdev_/monorepo-vs-polyrepo-j9">monorepo vs polyrepo devcommunity</a></p>
+<p><a href="https://www.reddit.com/r/ExperiencedDevs/comments/12v3nfi/monorepo_vs_polyrepo/">monorepo vs polyrepo reddit</a></p>
+<h1 id="3-single-source-of-truth">3. Single Source of Truth</h1>
+<p>You need one or many single source of truth.
+A single source of truth (SSOT) ensures that all data elements are managed or edited in just one place within an
+information system. This is to ensure data consistency and integrity. You can have many different SSOTs for different
+“facts”. For marmot systems, I have 2 SSOTs, one for input semantics and
+another for data integrity.</p>
+<ul>
+<li>Backend acts as the SSOT for input/application semantics (password complexity, string format).</li>
+<li>Postgres acts as the SSOT for data integrity. (business invariants, uniqueness, foreign keys).</li>
+</ul>
+<p>Example: Marmot has many moving parts: a frontend, a mobile app, and an embedded database in the mobile app.
+Let’s say my sqlite database on the mobile app contains duplicate user ids which must be unique and weird input with
+ascii tabs/new lines. My backend and postgres database do not allow this type of data since its unnormalized or corrupt.
+Thankfully, because I have SSOTs setup on my backend and on postgres, when I sync the mobile app
+to my backend/database, it will fail.</p>
+<p>To implement SSOT’s you need strong validators in place.</p>
+<p><a href="https://en.wikipedia.org/wiki/Single_source_of_truth">single source of truth wiki</a></p>
+<p><a href="https://maddevs.io/glossary/single-source-of-truth/">What is a SSOT?</a></p>
+<h1 id="4-validation">4. Validation</h1>
+<p>Once you have established an SSOT, you must implement it with strong validation rules while having a flexible UX.
+For my backend, I do this with <a href="https://zod.dev/">Zod</a>.</p>
+<h3 id="backend-ssot-zod">Backend SSOT: Zod</h3>
+<p><em>Backend acts as the SSOT for input/application semantics (password complexity, string format).</em></p>
+<p>Below is how I validate this with zod for a User.</p>
+<pre class="astro-code material-theme-ocean" style="background-color:#0F111A;color:#babed8; overflow-x: auto;" tabindex="0" data-language="js"><code><span class="line"></span>
+<span class="line"><span style="color:#464B5D;font-style:italic">/**</span></span>
+<span class="line"><span style="color:#464B5D;font-style:italic"> * - Collapses any run of whitespace in a string (spaces, tabs, newlines, nbspb, and other weird unicode spaces etc.)</span></span>
+<span class="line"><span style="color:#464B5D;font-style:italic"> *  into a single ASCII space.</span></span>
+<span class="line"><span style="color:#464B5D;font-style:italic"> * - Trims leading and trailing whitespace.</span></span>
+<span class="line"><span style="color:#464B5D;font-style:italic"> * " Jared   \n Speak  \t   Driver\t " -> "Jared Speak Driver"</span></span>
+<span class="line"><span style="color:#464B5D;font-style:italic"> *</span></span>
+<span class="line"><span style="color:#464B5D;font-style:italic"> * </span><span style="color:#89DDFF;font-style:italic">@</span><span style="color:#C792EA;font-style:italic">param</span><span style="color:#BABED8;font-style:italic"> s</span></span>
+<span class="line"><span style="color:#464B5D;font-style:italic"> * </span><span style="color:#89DDFF;font-style:italic">@</span><span style="color:#C792EA;font-style:italic">returns</span></span>
+<span class="line"><span style="color:#464B5D;font-style:italic"> */</span></span>
+<span class="line"><span style="color:#89DDFF;font-style:italic">export</span><span style="color:#C792EA"> const</span><span style="color:#BABED8"> normalizeSpaces </span><span style="color:#89DDFF">=</span><span style="color:#89DDFF"> (</span><span style="color:#BABED8;font-style:italic">s</span><span style="color:#89DDFF">:</span><span style="color:#FFCB6B"> string</span><span style="color:#89DDFF">)</span><span style="color:#C792EA"> =></span><span style="color:#82AAFF"> whitespace</span><span style="color:#BABED8">(s</span><span style="color:#89DDFF">,</span><span style="color:#89DDFF"> "</span><span style="color:#C3E88D">normalize</span><span style="color:#89DDFF">"</span><span style="color:#BABED8">)</span><span style="color:#89DDFF">;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#464B5D;font-style:italic">/**</span></span>
+<span class="line"><span style="color:#464B5D;font-style:italic"> * Removes all whitespace from a string</span></span>
+<span class="line"><span style="color:#464B5D;font-style:italic"> * </span><span style="color:#89DDFF;font-style:italic">@</span><span style="color:#C792EA;font-style:italic">param</span><span style="color:#BABED8;font-style:italic"> s</span></span>
+<span class="line"><span style="color:#464B5D;font-style:italic"> * </span><span style="color:#89DDFF;font-style:italic">@</span><span style="color:#C792EA;font-style:italic">returns</span></span>
+<span class="line"><span style="color:#464B5D;font-style:italic"> */</span></span>
+<span class="line"><span style="color:#89DDFF;font-style:italic">export</span><span style="color:#C792EA"> const</span><span style="color:#BABED8"> removeAllWhitespace </span><span style="color:#89DDFF">=</span><span style="color:#89DDFF"> (</span><span style="color:#BABED8;font-style:italic">s</span><span style="color:#89DDFF">:</span><span style="color:#FFCB6B"> string</span><span style="color:#89DDFF">)</span><span style="color:#C792EA"> =></span><span style="color:#82AAFF"> whitespace</span><span style="color:#BABED8">(s</span><span style="color:#89DDFF">,</span><span style="color:#89DDFF"> "</span><span style="color:#C3E88D">remove</span><span style="color:#89DDFF">"</span><span style="color:#BABED8">)</span><span style="color:#89DDFF">;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#C792EA">const</span><span style="color:#BABED8"> whitespace </span><span style="color:#89DDFF">=</span><span style="color:#89DDFF"> (</span><span style="color:#BABED8;font-style:italic">s</span><span style="color:#89DDFF">:</span><span style="color:#FFCB6B"> string</span><span style="color:#89DDFF">,</span><span style="color:#BABED8;font-style:italic"> mode</span><span style="color:#89DDFF">:</span><span style="color:#FFCB6B"> GlobalTypes</span><span style="color:#89DDFF">.</span><span style="color:#FFCB6B">WhitespaceMode</span><span style="color:#89DDFF">)</span><span style="color:#C792EA"> =></span><span style="color:#89DDFF"> {</span></span>
+<span class="line"><span style="color:#89DDFF;font-style:italic">  if</span><span style="color:#F07178"> (</span><span style="color:#BABED8">mode</span><span style="color:#89DDFF"> ===</span><span style="color:#89DDFF"> "</span><span style="color:#C3E88D">remove</span><span style="color:#89DDFF">"</span><span style="color:#F07178">) </span><span style="color:#89DDFF">{</span></span>
+<span class="line"><span style="color:#89DDFF;font-style:italic">    return</span><span style="color:#BABED8"> s</span><span style="color:#89DDFF">.</span><span style="color:#82AAFF">replace</span><span style="color:#F07178">(</span><span style="color:#89DDFF">/</span><span style="color:#C3E88D">\s</span><span style="color:#89DDFF">+/</span><span style="color:#F78C6C">g</span><span style="color:#89DDFF">,</span><span style="color:#89DDFF"> ""</span><span style="color:#F07178">)</span><span style="color:#89DDFF">;</span></span>
+<span class="line"><span style="color:#89DDFF">  }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#89DDFF;font-style:italic">  return</span><span style="color:#BABED8"> s</span><span style="color:#89DDFF">.</span><span style="color:#82AAFF">replace</span><span style="color:#F07178">(</span><span style="color:#89DDFF">/</span><span style="color:#C3E88D">\s</span><span style="color:#89DDFF">+/</span><span style="color:#F78C6C">g</span><span style="color:#89DDFF">,</span><span style="color:#89DDFF"> "</span><span style="color:#89DDFF"> "</span><span style="color:#F07178">)</span><span style="color:#89DDFF">.</span><span style="color:#82AAFF">trim</span><span style="color:#F07178">()</span><span style="color:#89DDFF">;</span></span>
+<span class="line"><span style="color:#89DDFF">};</span></span>
+<span class="line"></span>
+<span class="line"></span>
+<span class="line"><span style="color:#FFCB6B">  User</span><span style="color:#89DDFF">:</span><span style="color:#BABED8"> z</span><span style="color:#89DDFF">.</span><span style="color:#82AAFF">strictObject</span><span style="color:#BABED8">(</span><span style="color:#89DDFF">{</span></span>
+<span class="line"><span style="color:#F07178">    user_first_name</span><span style="color:#89DDFF">:</span><span style="color:#BABED8"> z</span></span>
+<span class="line"><span style="color:#89DDFF">      .</span><span style="color:#82AAFF">string</span><span style="color:#BABED8">()</span></span>
+<span class="line"><span style="color:#89DDFF">      .</span><span style="color:#82AAFF">transform</span><span style="color:#BABED8">(GlobalUtils</span><span style="color:#89DDFF">.</span><span style="color:#BABED8">normalizeSpaces)</span></span>
+<span class="line"><span style="color:#89DDFF">      .</span><span style="color:#82AAFF">pipe</span><span style="color:#BABED8">(</span></span>
+<span class="line"><span style="color:#BABED8">        z</span></span>
+<span class="line"><span style="color:#89DDFF">          .</span><span style="color:#82AAFF">string</span><span style="color:#BABED8">()</span></span>
+<span class="line"><span style="color:#89DDFF">          .</span><span style="color:#82AAFF">min</span><span style="color:#BABED8">(</span><span style="color:#F78C6C">1</span><span style="color:#89DDFF">,</span><span style="color:#89DDFF"> "</span><span style="color:#C3E88D">First name is required</span><span style="color:#89DDFF">"</span><span style="color:#BABED8">)</span></span>
+<span class="line"><span style="color:#89DDFF">          .</span><span style="color:#82AAFF">max</span><span style="color:#BABED8">(</span><span style="color:#F78C6C">50</span><span style="color:#89DDFF">,</span><span style="color:#89DDFF"> "</span><span style="color:#C3E88D">First name must be at most 50 characters.</span><span style="color:#89DDFF">"</span><span style="color:#BABED8">)</span></span>
+<span class="line"><span style="color:#BABED8">      )</span><span style="color:#89DDFF">,</span></span>
+<span class="line"><span style="color:#F07178">    user_last_name</span><span style="color:#89DDFF">:</span><span style="color:#BABED8"> z</span></span>
+<span class="line"><span style="color:#89DDFF">      .</span><span style="color:#82AAFF">string</span><span style="color:#BABED8">()</span></span>
+<span class="line"><span style="color:#89DDFF">      .</span><span style="color:#82AAFF">transform</span><span style="color:#BABED8">(GlobalUtils</span><span style="color:#89DDFF">.</span><span style="color:#BABED8">normalizeSpaces)</span></span>
+<span class="line"><span style="color:#89DDFF">      .</span><span style="color:#82AAFF">pipe</span><span style="color:#BABED8">(</span></span>
+<span class="line"><span style="color:#BABED8">        z</span></span>
+<span class="line"><span style="color:#89DDFF">          .</span><span style="color:#82AAFF">string</span><span style="color:#BABED8">()</span></span>
+<span class="line"><span style="color:#89DDFF">          .</span><span style="color:#82AAFF">min</span><span style="color:#BABED8">(</span><span style="color:#F78C6C">1</span><span style="color:#89DDFF">,</span><span style="color:#89DDFF"> "</span><span style="color:#C3E88D">Last name is required</span><span style="color:#89DDFF">"</span><span style="color:#BABED8">)</span></span>
+<span class="line"><span style="color:#89DDFF">          .</span><span style="color:#82AAFF">max</span><span style="color:#BABED8">(</span><span style="color:#F78C6C">50</span><span style="color:#89DDFF">,</span><span style="color:#89DDFF"> "</span><span style="color:#C3E88D">Last name must be at most 50 characters.</span><span style="color:#89DDFF">"</span><span style="color:#BABED8">)</span></span>
+<span class="line"><span style="color:#BABED8">      )</span><span style="color:#89DDFF">,</span></span>
+<span class="line"><span style="color:#F07178">    user_email</span><span style="color:#89DDFF">:</span><span style="color:#BABED8"> z</span></span>
+<span class="line"><span style="color:#89DDFF">      .</span><span style="color:#82AAFF">string</span><span style="color:#BABED8">()</span></span>
+<span class="line"><span style="color:#89DDFF">      .</span><span style="color:#82AAFF">transform</span><span style="color:#BABED8">(GlobalUtils</span><span style="color:#89DDFF">.</span><span style="color:#BABED8">removeAllWhitespace)</span></span>
+<span class="line"><span style="color:#89DDFF">      .</span><span style="color:#82AAFF">transform</span><span style="color:#BABED8">(</span><span style="color:#89DDFF">(</span><span style="color:#BABED8;font-style:italic">email</span><span style="color:#89DDFF">)</span><span style="color:#C792EA"> =></span><span style="color:#BABED8"> email</span><span style="color:#89DDFF">.</span><span style="color:#82AAFF">toLowerCase</span><span style="color:#BABED8">())</span></span>
+<span class="line"><span style="color:#89DDFF">      .</span><span style="color:#82AAFF">pipe</span><span style="color:#BABED8">(</span></span>
+<span class="line"><span style="color:#BABED8">        z</span></span>
+<span class="line"><span style="color:#89DDFF">          .</span><span style="color:#82AAFF">email</span><span style="color:#BABED8">()</span></span>
+<span class="line"><span style="color:#89DDFF">          .</span><span style="color:#82AAFF">max</span><span style="color:#BABED8">(</span><span style="color:#F78C6C">254</span><span style="color:#89DDFF">,</span><span style="color:#89DDFF"> "</span><span style="color:#C3E88D">Customer email must be at most 254 characters.</span><span style="color:#89DDFF">"</span><span style="color:#BABED8">)</span></span>
+<span class="line"><span style="color:#BABED8">      )</span><span style="color:#89DDFF">,</span></span>
+<span class="line"><span style="color:#F07178">    password</span><span style="color:#89DDFF">:</span><span style="color:#BABED8"> z</span></span>
+<span class="line"><span style="color:#89DDFF">      .</span><span style="color:#82AAFF">string</span><span style="color:#BABED8">()</span></span>
+<span class="line"><span style="color:#89DDFF">      .</span><span style="color:#82AAFF">min</span><span style="color:#BABED8">(</span><span style="color:#F78C6C">8</span><span style="color:#89DDFF">,</span><span style="color:#89DDFF"> "</span><span style="color:#C3E88D">Password must be at least 8 characters</span><span style="color:#89DDFF">"</span><span style="color:#BABED8">)</span></span>
+<span class="line"><span style="color:#89DDFF">      .</span><span style="color:#82AAFF">max</span><span style="color:#BABED8">(</span><span style="color:#F78C6C">25</span><span style="color:#89DDFF">,</span><span style="color:#89DDFF"> "</span><span style="color:#C3E88D">Password must be at most 25 characters</span><span style="color:#89DDFF">"</span><span style="color:#BABED8">)</span></span>
+<span class="line"><span style="color:#89DDFF">      .</span><span style="color:#82AAFF">regex</span><span style="color:#BABED8">(</span><span style="color:#89DDFF">/[</span><span style="color:#C3E88D">A-Z</span><span style="color:#89DDFF">]/</span><span style="color:#89DDFF">,</span><span style="color:#89DDFF"> "</span><span style="color:#C3E88D">Password must contain at least one uppercase letter</span><span style="color:#89DDFF">"</span><span style="color:#BABED8">)</span></span>
+<span class="line"><span style="color:#89DDFF">      .</span><span style="color:#82AAFF">regex</span><span style="color:#BABED8">(</span><span style="color:#89DDFF">/[</span><span style="color:#C3E88D">a-z</span><span style="color:#89DDFF">]/</span><span style="color:#89DDFF">,</span><span style="color:#89DDFF"> "</span><span style="color:#C3E88D">Password must contain at least one lowercase letter</span><span style="color:#89DDFF">"</span><span style="color:#BABED8">)</span></span>
+<span class="line"><span style="color:#89DDFF">      .</span><span style="color:#82AAFF">regex</span><span style="color:#BABED8">(</span><span style="color:#89DDFF">/</span><span style="color:#C3E88D">\d</span><span style="color:#89DDFF">/</span><span style="color:#89DDFF">,</span><span style="color:#89DDFF"> "</span><span style="color:#C3E88D">Password must contain at least one number</span><span style="color:#89DDFF">"</span><span style="color:#BABED8">)</span></span>
+<span class="line"><span style="color:#89DDFF">      .</span><span style="color:#82AAFF">regex</span><span style="color:#BABED8">(</span></span>
+<span class="line"><span style="color:#89DDFF">        /[</span><span style="color:#C3E88D">@$!%*?&#x26;#^_+=-</span><span style="color:#89DDFF">]/</span><span style="color:#89DDFF">,</span></span>
+<span class="line"><span style="color:#89DDFF">        "</span><span style="color:#C3E88D">Password must contain at least one special character</span><span style="color:#89DDFF">"</span></span>
+<span class="line"><span style="color:#BABED8">      )</span></span>
+<span class="line"><span style="color:#89DDFF">      .</span><span style="color:#82AAFF">regex</span><span style="color:#BABED8">(</span><span style="color:#89DDFF">/</span><span style="color:#89DDFF;font-style:italic">^</span><span style="color:#C3E88D">\S</span><span style="color:#89DDFF">*</span><span style="color:#89DDFF;font-style:italic">$</span><span style="color:#89DDFF">/</span><span style="color:#89DDFF">,</span><span style="color:#89DDFF"> "</span><span style="color:#C3E88D">Password cannot contain spaces or other whitespace.</span><span style="color:#89DDFF">"</span><span style="color:#BABED8">)</span><span style="color:#89DDFF">,</span></span>
+<span class="line"><span style="color:#89DDFF">  }</span><span style="color:#BABED8">)</span><span style="color:#89DDFF">,</span></span></code></pre>
+<p>Based on the business requirements, I don’t allow malformed data in my database (new lines, tabs, weird unicode spaces,
+double spaces etc).</p>
+<p>Notice how I am flexible with the transform callbacks. I normalize and sanitize input instead of rejecting it.
+Don’t punish the user for bad input, transform it.</p>
+<p>I also have semantic sanity checks in my postgres database. This isn’t part of my SSOT, this is mostly for precaution just in case
+something wasn’t caught through Zod. I recommend using check constraints to validate input on postgres.</p>
+<h3 id="postgres-semantic-sanity-checks">Postgres Semantic Sanity Checks</h3>
+<pre class="astro-code material-theme-ocean" style="background-color:#0F111A;color:#babed8; overflow-x: auto;" tabindex="0" data-language="sql"><code><span class="line"><span style="color:#BABED8">## postgres hard reject unnormalized </span><span style="color:#89DDFF">/</span><span style="color:#BABED8"> unsanitized items</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#BABED8">users_first_name_spaces_normalized_check </span><span style="color:#C792EA">CHECK</span><span style="color:#BABED8"> (first_name ~ </span><span style="color:#89DDFF">'</span><span style="color:#C3E88D">^\S+(?: \S+)*$</span><span style="color:#89DDFF">'</span><span style="color:#BABED8">);</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#BABED8">users_last_name_spaces_normalized_check </span><span style="color:#C792EA">CHECK</span><span style="color:#BABED8"> (last_name ~ </span><span style="color:#89DDFF">'</span><span style="color:#C3E88D">^\S+(?: \S+)*$</span><span style="color:#89DDFF">'</span><span style="color:#BABED8">);</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#BABED8">users_email_lower_case </span><span style="color:#C792EA">CHECK</span><span style="color:#BABED8"> (email </span><span style="color:#89DDFF">=</span><span style="color:#82AAFF"> lower</span><span style="color:#BABED8">(email));</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#BABED8">users_email_basic_format_check </span><span style="color:#C792EA">CHECK</span><span style="color:#BABED8"> (email ~ </span><span style="color:#89DDFF">'</span><span style="color:#C3E88D">^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$</span><span style="color:#89DDFF">'</span><span style="color:#BABED8">);</span></span>
+<span class="line"></span></code></pre>
+<p>Notice the first 2 constraints. They only reject unnormalized data that has tabs and new lines, but doesn’t reject
+weird unicode characters like no break space U+00A0 and thin space U+2009. Also the email constraint is rudimentary;
+zod greatly simplifies these tasks which is why I do not use my database as a SSOT for input semantics.</p>
+<p>I only have these constraints implemented to have a sort-of safe fallback. It doesn’t check everything but its nice to have.
+Take a pragmatic approach with semantic checks in your database. Only check what is important or necessary in your database.</p>
+<h3 id="postgres-ssot-postgres">Postgres SSOT: Postgres</h3>
+<p><em>Postgres acts as the SSOT for data integrity. (business invariants, uniqueness, foreign keys).</em></p>
+<p>Below are examples on how I implement this.</p>
+<h1 id="database">Database</h1>
+<p>use timestamptz
+start strict and loosen
+for sql lite keep it simple, no constraints. complexity when removing or changing them</p>
+<h1 id="backend">Backend</h1> </main> </body></html>
