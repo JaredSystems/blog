@@ -10,11 +10,8 @@ writings.sort((a, b) => b.data.article_date.getTime() - a.data.article_date.getT
 const fmtUTC = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeZone: "UTC" });
 const formatDateUTC = (d: string | Date) => fmtUTC.format(getDate(d));
 
-const [quoteEntry] = await getCollection("quotes", ({ slug }) => slug === "main_quote");
-if (!quoteEntry) {
-  throw new Error("quotes/main_quote not found");
-}
-const { Content: QuoteContent } = await quoteEntry.render();
+import QuoteContent from "../content/main_quote.md"
+
 
 ---
 

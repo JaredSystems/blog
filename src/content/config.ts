@@ -10,8 +10,4 @@ const writings = defineCollection({
   }),
 });
 
-const quotes = defineCollection({
-  schema: z.object({ title: z.string().optional() }),
-});
-
-export const collections = { writings, quotes };
+export const collections = { writings };
