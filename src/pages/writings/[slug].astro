@@ -21,6 +21,8 @@ const formatDateUTC = (d: string | Date) => fmtUTC.format(getDate(d));
 
 import pfp from "../../assets/jared-black-bg.png";
 import { Image } from "astro:assets";
+import pfpUrl from "../../assets/jared-black-bg.png?url";
+
 
 ---
 
@@ -39,6 +41,8 @@ import { Image } from "astro:assets";
 <Image class="pfp-img" src={pfp} alt="jared" />
 <img class="pfp-img" src="/jared-black-bg.png" alt="jared" />
 <img class="pfp-img" src={pfp.src} width={pfp.width} height={pfp.height} alt="jared" />
+<img class="pfp-img" src={pfpUrl} alt="jared" />
+
 
 
 
