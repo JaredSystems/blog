@@ -18,6 +18,8 @@ const getDate = (d: string | Date) => (typeof d === "string" ? new Date(d) : d);
 
 const fmtUTC = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeZone: "UTC" });
 const formatDateUTC = (d: string | Date) => fmtUTC.format(getDate(d));
+
+import avatar from "../assets/jared-black-bg.png";
 ---
 
 <html>
@@ -32,7 +34,7 @@ const formatDateUTC = (d: string | Date) => fmtUTC.format(getDate(d));
  
   <body>
 	<div class="img-wrapper">
-  <img class="pfp-img" src="../../public/jared-black-bg.png" alt="jared">
+<img class="pfp-img" src="/jared-black-bg.png" alt="jared" />
   <h2>jared</h2>
 </div>
 <nav class="nav">
