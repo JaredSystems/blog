@@ -58,3 +58,21 @@ img {
   height: auto;
   display: block;
 }
+
+.pfp-img {
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+}
+
+.img-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  /* margin-bottom: 15px; */
+}
+
+.img-wrapper h2 {
+  font-size: 1.5rem;
+}
