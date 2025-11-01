@@ -11,6 +11,7 @@ const fmtUTC = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeZon
 const formatDateUTC = (d: string | Date) => fmtUTC.format(getDate(d));
 
 import QuoteContent from "../content/main_quote.md"
+import IndexContent from "../content/index.md"
 
 
 ---
@@ -43,29 +44,7 @@ import QuoteContent from "../content/main_quote.md"
 
 		<QuoteContent/>
 
-		<p>I'm 25 years old, based out of miami fl, and enjoy programming. I got into programming in late 2022 when I wanted to build a 
-			<a href="https://www.freemindrecovery.com/">mental health platform</a>  for myself. 
-			It's very trivial but it's what I utilized to learn full stack software development. 
-			Suprisingly it grew to more than 1000 users with no marketing.
-		</p>
-
-		<p>Utlimately, I ended up back in uni to study computer and information technology hoping to land a job, as the stigma of not having 
-			a bachelors was creeping up on me. Shortly after, I landed a software internship at 
-			<a href="https://en.wikipedia.org/wiki/Truist">truist</a> on their enterprise engineering team. 
-        	All these nice buzzwords just to say that I did nothing all internship and don't really want to go back to corporate.
-	</p>
-
-		<p>To kill time over my internship I studied <a href="">gamification</a> and <a href="">intelligent tutoring systems</a>  
-			with the end goal of building an automated AI math tutoring application. <a href="https://www.galaxitylearning.com/signin">Galaxity</a> 
-			is the result of this work. It integrates into existing learning management systems to tutor students on their homework. It never reached
-			market due to cuthroat competition in the edtech and b2a space. 
-		</p>
-
-		<p>Nowadays i'm the founder, ceo, cto, cfo, cmo <a href="https://www.marmotsystems.com/">@marmotsystems</a> (unemployed and diagnosed with ocd).
-		Unfortunately for me, the $100 MRR b2b saas is in the bag with the fries. But, I hope to change that.</p>
-
-		<p>Aside from my failed startups, I spend most of my free time reading or studying systems programming. 
-		</p>
+		<IndexContent/>
 	</main>
 
 	<section class="section">
