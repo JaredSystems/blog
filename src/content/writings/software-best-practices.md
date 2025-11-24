@@ -72,10 +72,10 @@ I'd probably go with a monorepo setup.
 You need one or many single source of truth.
 A single source of truth (SSOT) ensures that all data elements are managed or edited in just one place within an
 information system. This is to ensure data consistency and integrity. You can have many different SSOTs for different
-"facts". For marmot systems, I have 2 SSOTs, one for input semantics and
+"facts". For marmot systems, I have 2 SSOTs, one for input normalization and
 another for data integrity.
 
-- Backend acts as the SSOT for input/application semantics (password complexity, string format).
+- Backend acts as the SSOT for input/application normalization (password complexity, string format).
 - Postgres acts as the SSOT for data integrity. (business invariants, uniqueness, foreign keys).
 
 Example: Marmot has many moving parts: a frontend, a mobile app, and an embedded database in the mobile app.
@@ -97,7 +97,7 @@ For my backend, I do this with [Zod](https://zod.dev/).
 
 ### Backend SSOT: Zod
 
-_Backend acts as the SSOT for input/application semantics (password complexity, string format)._
+_Backend acts as the SSOT for input/application normalization (password complexity, string format)._
 
 Below is how I validate this with zod for a User.
 
@@ -179,10 +179,10 @@ double spaces etc).
 Notice how I am flexible with the transform callbacks. I normalize and sanitize input instead of rejecting it.
 Don't punish the user for bad input, transform it.
 
-I also have semantic sanity checks in my postgres database. This isn't part of my SSOT, this is mostly for precaution just in case
+I also have normalization sanity checks in my postgres database. This isn't part of my SSOT, this is mostly for precaution just in case
 something wasn't caught through Zod. I recommend using check constraints to validate input on postgres.
 
-### Postgres Semantic Sanity Checks
+### Postgres Normalization Sanity Checks
 
 ```sql
 ## postgres hard reject unnormalized / unsanitized items
@@ -199,10 +199,10 @@ users_email_basic_format_check CHECK (email ~ '^[^[:space:]@]+@[^[:space:]@]+\.[
 
 Notice the first 2 constraints. They only reject unnormalized data that has tabs and new lines, but doesn't reject
 weird unicode characters like no break space U+00A0 and thin space U+2009. Also the email constraint is rudimentary;
-zod greatly simplifies these tasks which is why I do not use my database as a SSOT for input semantics.
+zod greatly simplifies these tasks which is why I do not use my database as a SSOT for input normalization.
 
 I only have these constraints implemented to have a sort-of safe fallback. It doesn't check everything but its nice to have.
-Take a pragmatic approach with semantic checks in your database. Only check what is important or necessary in your database.
+Take a pragmatic approach with normalization checks in your database. Only check what is important or necessary in your database.
 
 ### Postgres SSOT: Postgres
 

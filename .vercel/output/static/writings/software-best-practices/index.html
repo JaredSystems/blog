@@ -48,10 +48,10 @@ I’d probably go with a monorepo setup.</p>
 <p>You need one or many single source of truth.
 A single source of truth (SSOT) ensures that all data elements are managed or edited in just one place within an
 information system. This is to ensure data consistency and integrity. You can have many different SSOTs for different
-“facts”. For marmot systems, I have 2 SSOTs, one for input semantics and
+“facts”. For marmot systems, I have 2 SSOTs, one for input normalization and
 another for data integrity.</p>
 <ul>
-<li>Backend acts as the SSOT for input/application semantics (password complexity, string format).</li>
+<li>Backend acts as the SSOT for input/application normalization (password complexity, string format).</li>
 <li>Postgres acts as the SSOT for data integrity. (business invariants, uniqueness, foreign keys).</li>
 </ul>
 <p>Example: Marmot has many moving parts: a frontend, a mobile app, and an embedded database in the mobile app.
@@ -66,7 +66,7 @@ to my backend/database, it will fail.</p>
 <p>Once you have established an SSOT, you must implement it with strong validation rules while having a flexible UX.
 For my backend, I do this with <a href="https://zod.dev/">Zod</a>.</p>
 <h3 id="backend-ssot-zod">Backend SSOT: Zod</h3>
-<p><em>Backend acts as the SSOT for input/application semantics (password complexity, string format).</em></p>
+<p><em>Backend acts as the SSOT for input/application normalization (password complexity, string format).</em></p>
 <p>Below is how I validate this with zod for a User.</p>
 <pre class="astro-code material-theme-ocean" style="background-color:#0F111A;color:#babed8; overflow-x: auto;" tabindex="0" data-language="js"><code><span class="line"></span>
 <span class="line"><span style="color:#464B5D;font-style:italic">/**</span></span>
@@ -141,9 +141,9 @@ For my backend, I do this with <a href="https://zod.dev/">Zod</a>.</p>
 double spaces etc).</p>
 <p>Notice how I am flexible with the transform callbacks. I normalize and sanitize input instead of rejecting it.
 Don’t punish the user for bad input, transform it.</p>
-<p>I also have semantic sanity checks in my postgres database. This isn’t part of my SSOT, this is mostly for precaution just in case
+<p>I also have normalization sanity checks in my postgres database. This isn’t part of my SSOT, this is mostly for precaution just in case
 something wasn’t caught through Zod. I recommend using check constraints to validate input on postgres.</p>
-<h3 id="postgres-semantic-sanity-checks">Postgres Semantic Sanity Checks</h3>
+<h3 id="postgres-normalization-sanity-checks">Postgres Normalization Sanity Checks</h3>
 <pre class="astro-code material-theme-ocean" style="background-color:#0F111A;color:#babed8; overflow-x: auto;" tabindex="0" data-language="sql"><code><span class="line"><span style="color:#BABED8">## postgres hard reject unnormalized </span><span style="color:#89DDFF">/</span><span style="color:#BABED8"> unsanitized items</span></span>
 <span class="line"></span>
 <span class="line"><span style="color:#BABED8">users_first_name_spaces_normalized_check </span><span style="color:#C792EA">CHECK</span><span style="color:#BABED8"> (first_name ~ </span><span style="color:#89DDFF">'</span><span style="color:#C3E88D">^\S+(?: \S+)*$</span><span style="color:#89DDFF">'</span><span style="color:#BABED8">);</span></span>
@@ -156,9 +156,9 @@ something wasn’t caught through Zod. I recommend using check constraints to va
 <span class="line"></span></code></pre>
 <p>Notice the first 2 constraints. They only reject unnormalized data that has tabs and new lines, but doesn’t reject
 weird unicode characters like no break space U+00A0 and thin space U+2009. Also the email constraint is rudimentary;
-zod greatly simplifies these tasks which is why I do not use my database as a SSOT for input semantics.</p>
+zod greatly simplifies these tasks which is why I do not use my database as a SSOT for input normalization.</p>
 <p>I only have these constraints implemented to have a sort-of safe fallback. It doesn’t check everything but its nice to have.
-Take a pragmatic approach with semantic checks in your database. Only check what is important or necessary in your database.</p>
+Take a pragmatic approach with normalization checks in your database. Only check what is important or necessary in your database.</p>
 <h3 id="postgres-ssot-postgres">Postgres SSOT: Postgres</h3>
 <p><em>Postgres acts as the SSOT for data integrity. (business invariants, uniqueness, foreign keys).</em></p>
 <p>Below are examples on how I implement this.</p>
