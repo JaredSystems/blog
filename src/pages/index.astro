@@ -12,6 +12,9 @@ const formatDateUTC = (d: string | Date) => fmtUTC.format(getDate(d));
 
 import QuoteContent from "../content/main_quote.md"
 import IndexContent from "../content/index.md"
+import ProjectContent from "../content/projects.md"
+import ExperienceContent from "../content/experience.md"
+import EducationContent from "../content/education.md"
 
 
 ---
@@ -46,38 +49,24 @@ import IndexContent from "../content/index.md"
 
 		<IndexContent/>
 	</main>
-
+	
 	<section class="section">
-		<h1>Projects</h1>
-		<p>Things i've created or am creating (date desc order)</p>
-		<h3>Full Stack</h3>
-		<div>
-			<ul><a href="https://www.marmotsystems.com/">marmot systems</a> - direct store delivery (dsd) and accounting
-				software optimized for speed, simplictity, and reliability. 
-			</ul>
+		  <ExperienceContent/>
+	</section>
 
-			<ul><a href="https://www.galaxitylearning.com/signin">galaxity</a> (inactive) - AI math tutoring app integrated
-				into school learning management systems. Based off the octalysis framework.
-			</ul>
-
-
-
-			<ul><a href="https://www.freemindrecovery.com/">freemind</a> (inactive) - free mental health platform 
-				to support those struggling with anxiety disorders.
-			</ul>
-
-		</div>
-
-			<h3>Security</h3>
-		<div>
-				<ul><a href="https://github.com/JaredSystems/c-cryptography-library">cryptography library</a> (inactive) - supports 2 encryption 
-					ciphers and 1 key exchange algorithm (Diffie-Hellman). 
-			</ul>
-		</div>
+		<section class="section">
+		  <EducationContent/>
 	</section>
 
 	<section class="section">
-		<h1>Writings</h1>
+
+			<ProjectContent/>
+
+			
+	</section>
+
+	<section class="section">
+		<!-- <h1>Writings</h1>
 		<ul>
     {writings.map((post) => (
       <li>
@@ -86,7 +75,7 @@ import IndexContent from "../content/index.md"
         <p>{post.data.description}</p>
       </li>
     ))}
-  </ul>
+  </ul> -->
 	</section>
   </body>
 </html>
