@@ -4,7 +4,7 @@ title: "Experience Section"
 
 # Experience
 
-[Marmot Systems](https://www.marmotsystems.com/) (November 2025 - Now) - **Small Business Owner**
+[Marmot Systems](https://www.marmotsystems.com/) (May 2025 - Now) - **Small Business Owner**
 
 - Built Marmot as the only engineer in the organization.
 
