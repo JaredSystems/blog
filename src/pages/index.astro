@@ -16,6 +16,68 @@ import ProjectContent from "../content/projects.md"
 import ExperienceContent from "../content/experience.md"
 import EducationContent from "../content/education.md"
 
+const timelineItems = [
+	{
+		month: "August 2018",
+		events: ["Enrolled into college for Electrical Engineering"],
+	},
+	{
+		month: "June 2019",
+		events: ["Quit my job to join my dad as a business partner at a distribution company"],
+	},
+	{
+		month: "December 2020",
+		events: ["Dropped out of college. Went all in on the business"],
+	},
+	{
+		month: "January 2022",
+		events: ["Scaled the business to $2.5 million ARR. Previously $500K ARR for nearly a decade"],
+	},
+	{
+		month: "February 2022",
+		events: ["Business partner split. Had reinvested my 2.5 year salary into the business. Walked away with $0 in equity/cash."],
+	},
+	{
+		month: "March 2022",
+		events: ["Ended up living in a truck and in hotels/motels. Moved to Dallas TX to find work."],
+	},
+	{
+		month: "June 2022",
+		events: ["Got married to my best friend. Was able to move into an apartment."],
+	},
+	{
+		month: "August 2022",
+		events: ["Had a mental break down. Lost my job. Almost admitted several times to a hospital. Was never the same since."],
+	},
+	{
+		month: "January 2023",
+		events: ["Me and my wife moved to Charlotte NC. We left with 4 trash bags filled with clothes, some shoes, pillows, and my computer."],
+	},
+	{
+		month: "February 2023",
+		events: ["Started working at Target. Started learning how to program. Still in recovery: could barely keep my job."],
+	},
+	{
+		month: "August 2023",
+		events: ["Enrolled back into college as a Computer & Information Technology major."],
+	},
+	{
+		month: "June 2024",
+		events: ["Secured a internship at a fortune 200 company. Went from sleeping in a truck to working with Harvard / UPenn / Duke graduates in under 2.5 years."],
+	},
+	{
+		month: "January 2025",
+		events: ["Started building Marmot Systems. Recovered from my mental health problems"],
+	},
+	{
+		month: "May 2025",
+		events: ["Graduated from uni"],
+	},
+	{
+		month: "February 2026",
+		events: ["Launched Marmot Systems in Latin America"],
+	},
+];
 
 ---
 
@@ -48,6 +110,28 @@ import EducationContent from "../content/education.md"
 		<QuoteContent/>
 
 		<IndexContent/>
+
+		<!-- <section class="timeline-section">
+			<h2>My Story</h2>
+			<ul class="timeline-list">
+				{timelineItems.map((item) => (
+					<li class="timeline-item">
+						<p class="timeline-month">{item.month}</p>
+						<div class="timeline-events">
+							{item.events.length > 0 ? (
+								<ul>
+									{item.events.map((event) => (
+										<span>{event}</span>
+									))}
+								</ul>
+							) : (
+								<p class="timeline-empty">&nbsp;</p>
+							)}
+						</div>
+					</li>
+				))}
+			</ul>
+		</section> -->
 	</main>
 	
 	<section class="section">
@@ -79,4 +163,3 @@ import EducationContent from "../content/education.md"
 	</section>
   </body>
 </html>
-
