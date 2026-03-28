@@ -4,6 +4,8 @@ title: "Home Page Quote"
 
 ---
 
-> _A ship in harbor is safe, but that is not what ships are built for_
+> _Brilliant thinking is rare, but courage is in even shorter supply than genius._
+
+> — Peter Thiel
 
 ---
