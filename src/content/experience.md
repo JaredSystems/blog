@@ -16,7 +16,7 @@ title: "Experience Section"
 
 - Worked on the enterprise technology team. Mostly consisted of working with SAP and SAP ABAP.
 
-[Galaxity Learning](/galaxity-learning) (March 2024 - August 2024) - **Creator**
+[Galaxity Learning](/galaxity-learning) (March 2024 - August 2024) - **Software Engineer**
 
 - Built Galaxity Learning as the only engineer in the organization.
 
