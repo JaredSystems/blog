@@ -1,0 +1,81 @@
+---
+import "../styles/global.css";
+
+const screenshots = [
+  {
+    src: "/galaxity-full-screen.jpg",
+    alt: "Galaxity Learning full screen application view",
+  },
+  {
+    src: "/IMG_5416.PNG",
+    alt: "Galaxity Learning screenshot 1",
+  },
+  {
+    src: "/IMG_5417.PNG",
+    alt: "Galaxity Learning screenshot 2",
+  },
+  {
+    src: "/IMG_5418.PNG",
+    alt: "Galaxity Learning screenshot 3",
+  },
+  {
+    src: "/IMG_5419.PNG",
+    alt: "Galaxity Learning screenshot 4",
+  },
+  {
+    src: "/IMG_5423.PNG",
+    alt: "Galaxity Learning screenshot 5",
+  },
+  {
+    src: "/IMG_5424.PNG",
+    alt: "Galaxity Learning screenshot 6",
+  },
+  {
+    src: "/IMG_5426.PNG",
+    alt: "Galaxity Learning screenshot 7",
+  },
+];
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="icon" type="image/svg+xml" href="" />
+    <meta name="generator" content={Astro.generator} />
+    <title>Galaxity Learning | jaredsystems</title>
+  </head>
+  <body>
+    <div class="img-wrapper">
+      <img class="pfp-img" src="/jared-black-bg.png" alt="jared" />
+      <h2>jared</h2>
+    </div>
+
+    <nav class="nav">
+      <div><a href="/">home</a></div>
+      <div><a href="/resources">resources</a></div>
+      <div><a href="https://github.com/JaredSystems">github</a></div>
+    </nav>
+
+    <main class="main">
+
+      <section class="galaxity-intro">
+        <h1>Galaxity Learning</h1>
+        <p>
+          Galaxity Learning is an AI math tutoring application that integrates
+          with schools learning management systems, so students can get curated
+          tutoring based on their strengths and weaknesses.
+        </p>
+      </section>
+
+      <section class="galaxity-gallery" aria-label="Galaxity Learning screenshots">
+        {screenshots.map((screenshot) => (
+          <figure>
+            <img src={screenshot.src} alt={screenshot.alt} loading="lazy" />
+          </figure>
+        ))}
+      </section>
+    </main>
+  </body>
+</html>

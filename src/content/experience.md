@@ -15,3 +15,11 @@ title: "Experience Section"
 [Truist Bank](https://en.wikipedia.org/wiki/Truist) (May 2024 - August 2024) - **Software Engineer Intern**
 
 - Worked on the enterprise technology team. Mostly consisted of working with SAP and SAP ABAP.
+
+[Galaxity Learning](/galaxity-learning) (March 2024 - August 2024) - **Creator**
+
+- Built Galaxity Learning as the only engineer in the organization.
+
+- Designed and implemented learning management integrations (Schoology, Google Classroom) into the Galaxity platform.
+
+- Gamified Galaxity based on gamification systems for middle and high school students.

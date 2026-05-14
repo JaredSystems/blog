@@ -137,3 +137,31 @@ img {
 .img-wrapper h2 {
   font-size: 1.5rem;
 }
+
+.galaxity-intro {
+  margin-top: 2rem;
+}
+
+.galaxity-intro h1 {
+  margin-bottom: 0.75rem;
+}
+
+.galaxity-intro p {
+  font-size: 1.05rem;
+}
+
+.galaxity-gallery {
+  display: grid;
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.galaxity-gallery figure {
+  margin: 0;
+}
+
+.galaxity-gallery img {
+  width: 100%;
+  border: 1px solid #3a3f5a;
+  border-radius: 8px;
+}

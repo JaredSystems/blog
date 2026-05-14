@@ -6,7 +6,7 @@ title: "Education Section"
 
 **Bachelor of Science in Computer and Information Technology** - [Florida International University](https://en.wikipedia.org/wiki/Florida_International_University) (January 2023 - May 2025)
 
-Previously an Electrical Engineering major, which should explain the scattered coursework
+<!-- Previously an Electrical Engineering major, which should explain the scattered coursework -->
 
 - Mathematics: Multivariable Calculus, Differential Equations, Discrete Mathematics
 
