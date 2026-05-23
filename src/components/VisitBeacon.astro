@@ -7,6 +7,63 @@
 
     if (doNotTrack) return;
 
+    const getViewport = () => {
+      const width =
+        document.documentElement.clientWidth || window.innerWidth || 0;
+
+      return width < 640 ? "mobile" : width < 1024 ? "tablet" : "desktop";
+    };
+
+    const getContext = () => ({
+      path: window.location.pathname,
+      title: document.title,
+      language: navigator.language,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      viewport: getViewport(),
+    });
+
+    const send = (url, payload) => {
+      const body = JSON.stringify(payload);
+
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon(
+          url,
+          new Blob([body], { type: "application/json" }),
+        );
+        return;
+      }
+
+      fetch(url, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body,
+        keepalive: true,
+      }).catch(() => {});
+    };
+
+    const getTrackedLink = (href) => {
+      try {
+        const url = new URL(href, window.location.href);
+        const host = url.hostname.replace(/^www\./, "").toLowerCase();
+        const path = url.pathname.toLowerCase();
+
+        if (host === "marmotsystems.com") {
+          return { href: url.href, label: "Marmot Systems" };
+        }
+
+        if (
+          (host === "wikipedia.org" || host.endsWith(".wikipedia.org")) &&
+          path.startsWith("/wiki/truist")
+        ) {
+          return { href: url.href, label: "Truist Bank" };
+        }
+      } catch {
+        return null;
+      }
+
+      return null;
+    };
+
     const params = new URLSearchParams(window.location.search);
     const utm = {};
 
@@ -15,36 +72,31 @@
       if (value) utm[key] = value;
     }
 
-    const width =
-      document.documentElement.clientWidth || window.innerWidth || 0;
-    const viewport =
-      width < 640 ? "mobile" : width < 1024 ? "tablet" : "desktop";
-
-    const payload = {
-      path: window.location.pathname,
-      title: document.title,
+    send("/api/analytics/visit", {
+      ...getContext(),
       referrer: document.referrer,
       utm,
-      language: navigator.language,
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      viewport,
-    };
+    });
 
-    const body = JSON.stringify(payload);
+    document.addEventListener(
+      "click",
+      (event) => {
+        if (!(event.target instanceof Element)) return;
 
-    if (navigator.sendBeacon) {
-      navigator.sendBeacon(
-        "/api/analytics/visit",
-        new Blob([body], { type: "application/json" }),
-      );
-      return;
-    }
+        const link = event.target.closest("a[href]");
+        if (!link) return;
 
-    fetch("/api/analytics/visit", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body,
-      keepalive: true,
-    }).catch(() => {});
+        const trackedLink = getTrackedLink(link.href);
+        if (!trackedLink) return;
+
+        send("/api/analytics/click", {
+          ...getContext(),
+          href: trackedLink.href,
+          label: trackedLink.label,
+          linkText: link.textContent || "",
+        });
+      },
+      { capture: true },
+    );
   })();
 </script>

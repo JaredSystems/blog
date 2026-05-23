@@ -13,6 +13,17 @@ type VisitPayload = {
   viewport?: unknown;
 };
 
+type ClickPayload = {
+  path?: unknown;
+  title?: unknown;
+  href?: unknown;
+  label?: unknown;
+  linkText?: unknown;
+  language?: unknown;
+  timezone?: unknown;
+  viewport?: unknown;
+};
+
 export type VisitEvent = {
   id: string;
   timestamp: string;
@@ -33,18 +44,46 @@ export type VisitEvent = {
   timezone: string;
   viewport: string;
   country: string;
+  region: string;
+  city: string;
+  device: string;
+  browser: string;
+  os: string;
+};
+
+export type ClickEvent = {
+  id: string;
+  timestamp: string;
+  path: string;
+  title: string;
+  targetLabel: string;
+  targetUrl: string;
+  targetHost: string;
+  linkText: string;
+  language: string;
+  timezone: string;
+  viewport: string;
+  country: string;
+  region: string;
+  city: string;
   device: string;
   browser: string;
   os: string;
 };
 
 const ANALYTICS_KEY = process.env.ANALYTICS_KV_KEY || "blog:analytics:visits";
+const CLICKS_KEY = process.env.ANALYTICS_CLICKS_KV_KEY || "blog:analytics:clicks";
 const configuredMaxEvents = Number(process.env.ANALYTICS_MAX_EVENTS || 1000);
 const MAX_EVENTS =
   Number.isFinite(configuredMaxEvents) && configuredMaxEvents > 0
     ? configuredMaxEvents
     : 1000;
 const LOCAL_FILE = join(tmpdir(), "jareds-blog-analytics", "visits.jsonl");
+const LOCAL_CLICKS_FILE = join(
+  tmpdir(),
+  "jareds-blog-analytics",
+  "clicks.jsonl",
+);
 
 const KNOWN_SOURCES: Record<string, string> = {
   instagram: "Instagram",
@@ -68,6 +107,16 @@ function cleanString(value: unknown, maxLength = 160) {
     .replace(/[\u0000-\u001f\u007f]/g, "")
     .trim()
     .slice(0, maxLength);
+}
+
+function cleanGeoHeader(value: string | null, maxLength = 160) {
+  if (!value) return "";
+
+  try {
+    return cleanString(decodeURIComponent(value), maxLength);
+  } catch {
+    return cleanString(value, maxLength);
+  }
 }
 
 function cleanPath(value: unknown) {
@@ -118,6 +167,39 @@ function cleanUtm(value: unknown): VisitEvent["utm"] {
     content: cleanString(record.content, 100),
     term: cleanString(record.term, 100),
   };
+}
+
+function trackedClickTarget(value: unknown) {
+  const href = cleanString(value, 500);
+  if (!href) return null;
+
+  try {
+    const url = new URL(href);
+    const host = url.hostname.replace(/^www\./, "").toLowerCase();
+
+    if (host === "marmotsystems.com") {
+      return {
+        label: "Marmot Systems",
+        url: url.href.slice(0, 300),
+        host,
+      };
+    }
+
+    if (
+      (host === "wikipedia.org" || host.endsWith(".wikipedia.org")) &&
+      url.pathname.toLowerCase().startsWith("/wiki/truist")
+    ) {
+      return {
+        label: "Truist Bank",
+        url: url.href.slice(0, 300),
+        host,
+      };
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
 }
 
 function labelFromToken(value: string) {
@@ -251,7 +333,46 @@ export function createVisitEvent(
     language: cleanString(payload.language, 30),
     timezone: cleanString(payload.timezone, 80),
     viewport: cleanString(payload.viewport, 30),
-    country: cleanString(request.headers.get("x-vercel-ip-country"), 8),
+    country: cleanGeoHeader(request.headers.get("x-vercel-ip-country"), 8),
+    region: cleanGeoHeader(
+      request.headers.get("x-vercel-ip-country-region"),
+      40,
+    ),
+    city: cleanGeoHeader(request.headers.get("x-vercel-ip-city"), 120),
+    device: parseDevice(userAgent),
+    browser: parseBrowser(userAgent),
+    os: parseOs(userAgent),
+  };
+}
+
+export function createClickEvent(
+  payload: ClickPayload,
+  request: Request,
+): ClickEvent | null {
+  const target = trackedClickTarget(payload.href);
+
+  if (!target) return null;
+
+  const userAgent = request.headers.get("user-agent") || "";
+
+  return {
+    id: randomUUID(),
+    timestamp: new Date().toISOString(),
+    path: cleanPath(payload.path),
+    title: cleanString(payload.title, 120),
+    targetLabel: target.label,
+    targetUrl: target.url,
+    targetHost: target.host,
+    linkText: cleanString(payload.linkText, 120),
+    language: cleanString(payload.language, 30),
+    timezone: cleanString(payload.timezone, 80),
+    viewport: cleanString(payload.viewport, 30),
+    country: cleanGeoHeader(request.headers.get("x-vercel-ip-country"), 8),
+    region: cleanGeoHeader(
+      request.headers.get("x-vercel-ip-country-region"),
+      40,
+    ),
+    city: cleanGeoHeader(request.headers.get("x-vercel-ip-city"), 120),
     device: parseDevice(userAgent),
     browser: parseBrowser(userAgent),
     os: parseOs(userAgent),
@@ -315,9 +436,14 @@ async function saveLocalVisit(visit: VisitEvent) {
   await appendFile(LOCAL_FILE, `${JSON.stringify(visit)}\n`, "utf8");
 }
 
-async function readLocalVisits(limit: number) {
+async function saveLocalClick(click: ClickEvent) {
+  await mkdir(dirname(LOCAL_CLICKS_FILE), { recursive: true });
+  await appendFile(LOCAL_CLICKS_FILE, `${JSON.stringify(click)}\n`, "utf8");
+}
+
+async function readLocalEvents<T>(file: string, limit: number) {
   try {
-    const contents = await readFile(LOCAL_FILE, "utf8");
+    const contents = await readFile(file, "utf8");
     return contents
       .split("\n")
       .filter(Boolean)
@@ -325,7 +451,7 @@ async function readLocalVisits(limit: number) {
       .slice(0, limit)
       .flatMap((line) => {
         try {
-          return [JSON.parse(line) as VisitEvent];
+          return [JSON.parse(line) as T];
         } catch {
           return [];
         }
@@ -351,6 +477,21 @@ export async function saveVisit(visit: VisitEvent) {
   await saveLocalVisit(visit);
 }
 
+export async function saveClick(click: ClickEvent) {
+  if (hasKvWriteStorage()) {
+    await kvCommand<number>(["LPUSH", CLICKS_KEY, JSON.stringify(click)]);
+    await kvCommand<string>([
+      "LTRIM",
+      CLICKS_KEY,
+      "0",
+      String(Math.max(MAX_EVENTS - 1, 0)),
+    ]);
+    return;
+  }
+
+  await saveLocalClick(click);
+}
+
 export async function getVisitEvents(limit = 500) {
   if (hasKvReadStorage()) {
     const rows = await kvCommand<string[]>(
@@ -367,7 +508,26 @@ export async function getVisitEvents(limit = 500) {
     });
   }
 
-  return readLocalVisits(limit);
+  return readLocalEvents<VisitEvent>(LOCAL_FILE, limit);
+}
+
+export async function getClickEvents(limit = 500) {
+  if (hasKvReadStorage()) {
+    const rows = await kvCommand<string[]>(
+      ["LRANGE", CLICKS_KEY, "0", String(Math.max(limit - 1, 0))],
+      true,
+    );
+
+    return rows.flatMap((row) => {
+      try {
+        return [JSON.parse(row) as ClickEvent];
+      } catch {
+        return [];
+      }
+    });
+  }
+
+  return readLocalEvents<ClickEvent>(LOCAL_CLICKS_FILE, limit);
 }
 
 export function getAnalyticsStorageLabel() {

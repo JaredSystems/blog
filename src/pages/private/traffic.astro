@@ -1,9 +1,11 @@
 ---
 import "../../styles/global.css";
 import {
+  getClickEvents,
   getAnalyticsStorageLabel,
   getVisitEvents,
   isAnalyticsAuthorized,
+  type ClickEvent,
   type VisitEvent,
 } from "../../lib/analytics";
 
@@ -25,7 +27,10 @@ if (!isAnalyticsAuthorized(Astro.url, Astro.request)) {
   });
 }
 
-const visits = await getVisitEvents(500);
+const [visits, clicks] = await Promise.all([
+  getVisitEvents(500),
+  getClickEvents(500),
+]);
 const now = Date.now();
 const oneDay = 24 * 60 * 60 * 1000;
 const oneWeek = 7 * oneDay;
@@ -34,12 +39,12 @@ const formatter = new Intl.DateTimeFormat("en-US", {
   timeStyle: "short",
 });
 
-const within = (visit: VisitEvent, windowMs: number) =>
-  now - new Date(visit.timestamp).getTime() <= windowMs;
+const within = (event: { timestamp: string }, windowMs: number) =>
+  now - new Date(event.timestamp).getTime() <= windowMs;
 
-const countBy = (
-  rows: VisitEvent[],
-  getKey: (visit: VisitEvent) => string,
+const countBy = <T extends unknown>(
+  rows: T[],
+  getKey: (row: T) => string,
   fallback = "Unknown",
 ) => {
   const counts = new Map<string, number>();
@@ -54,13 +59,28 @@ const countBy = (
     .slice(0, 10);
 };
 
+const formatLocation = (visit: VisitEvent) =>
+  [visit.city, visit.region, visit.country].filter(Boolean).join(", ");
+
+const formatClickLocation = (click: ClickEvent) =>
+  [click.city, click.region, click.country].filter(Boolean).join(", ");
+
 const last24 = visits.filter((visit) => within(visit, oneDay)).length;
 const last7 = visits.filter((visit) => within(visit, oneWeek)).length;
 const instagram = visits.filter((visit) => visit.source === "Instagram").length;
+const last24Clicks = clicks.filter((click) => within(click, oneDay)).length;
+const marmotClicks = clicks.filter(
+  (click) => click.targetLabel === "Marmot Systems",
+).length;
+const truistClicks = clicks.filter(
+  (click) => click.targetLabel === "Truist Bank",
+).length;
 const sources = countBy(visits, (visit) => visit.source);
 const paths = countBy(visits, (visit) => visit.path);
-const countries = countBy(visits, (visit) => visit.country, "Unknown");
+const locations = countBy(visits, formatLocation, "Unknown");
+const clickTargets = countBy(clicks, (click) => click.targetLabel);
 const recent = visits.slice(0, 60);
+const recentClicks = clicks.slice(0, 40);
 const storageLabel = getAnalyticsStorageLabel();
 const refreshHref = `${Astro.url.pathname}?key=${encodeURIComponent(
   Astro.url.searchParams.get("key") || "",
@@ -101,11 +121,23 @@ const refreshHref = `${Astro.url.pathname}?key=${encodeURIComponent(
         <span>Total stored</span>
         <strong>{visits.length}</strong>
       </article>
+      <article>
+        <span>Last 24h clicks</span>
+        <strong>{last24Clicks}</strong>
+      </article>
+      <article>
+        <span>Marmot clicks</span>
+        <strong>{marmotClicks}</strong>
+      </article>
+      <article>
+        <span>Truist clicks</span>
+        <strong>{truistClicks}</strong>
+      </article>
     </section>
 
     <section class="traffic-meta">
       <span>Storage: {storageLabel}</span>
-      <span>No cookies, IPs, or full user-agent strings stored</span>
+      <span>No cookies, IPs, postal codes, lat/long, or full user-agent strings stored</span>
     </section>
 
     <section class="traffic-grid">
@@ -138,18 +170,63 @@ const refreshHref = `${Astro.url.pathname}?key=${encodeURIComponent(
       </div>
 
       <div class="traffic-panel">
-        <h2>Countries</h2>
+        <h2>Locations</h2>
         <table>
           <tbody>
-            {countries.map(([country, count]) => (
+            {locations.map(([location, count]) => (
               <tr>
-                <th>{country}</th>
+                <th>{location}</th>
                 <td>{count}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      <div class="traffic-panel">
+        <h2>Tracked Clicks</h2>
+        <table>
+          <tbody>
+            {clickTargets.map(([target, count]) => (
+              <tr>
+                <th>{target}</th>
+                <td>{count}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="traffic-panel traffic-recent">
+      <h2>Recent Link Clicks</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Link</th>
+            <th>Page</th>
+            <th>Device</th>
+            <th>Browser</th>
+            <th>Location</th>
+          </tr>
+        </thead>
+        <tbody>
+          {recentClicks.map((click) => (
+            <tr>
+              <td>{formatter.format(new Date(click.timestamp))}</td>
+              <td>
+                <span>{click.targetLabel}</span>
+                <small>{click.linkText || click.targetHost}</small>
+              </td>
+              <td>{click.path}</td>
+              <td>{click.device}</td>
+              <td>{click.browser}</td>
+              <td>{formatClickLocation(click) || "Unknown"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </section>
 
     <section class="traffic-panel traffic-recent">
@@ -162,6 +239,7 @@ const refreshHref = `${Astro.url.pathname}?key=${encodeURIComponent(
             <th>Page</th>
             <th>Device</th>
             <th>Browser</th>
+            <th>Location</th>
             <th>Locale</th>
           </tr>
         </thead>
@@ -176,6 +254,7 @@ const refreshHref = `${Astro.url.pathname}?key=${encodeURIComponent(
               <td>{visit.path}</td>
               <td>{visit.device}</td>
               <td>{visit.browser}</td>
+              <td>{formatLocation(visit) || "Unknown"}</td>
               <td>
                 <span>{visit.country || "Unknown"}</span>
                 {visit.language && <small>{visit.language}</small>}
