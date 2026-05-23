@@ -1,0 +1,50 @@
+<script is:inline>
+  (() => {
+    const doNotTrack =
+      navigator.doNotTrack === "1" ||
+      window.doNotTrack === "1" ||
+      navigator.msDoNotTrack === "1";
+
+    if (doNotTrack) return;
+
+    const params = new URLSearchParams(window.location.search);
+    const utm = {};
+
+    for (const key of ["source", "medium", "campaign", "content", "term"]) {
+      const value = params.get(`utm_${key}`);
+      if (value) utm[key] = value;
+    }
+
+    const width =
+      document.documentElement.clientWidth || window.innerWidth || 0;
+    const viewport =
+      width < 640 ? "mobile" : width < 1024 ? "tablet" : "desktop";
+
+    const payload = {
+      path: window.location.pathname,
+      title: document.title,
+      referrer: document.referrer,
+      utm,
+      language: navigator.language,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      viewport,
+    };
+
+    const body = JSON.stringify(payload);
+
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon(
+        "/api/analytics/visit",
+        new Blob([body], { type: "application/json" }),
+      );
+      return;
+    }
+
+    fetch("/api/analytics/visit", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body,
+      keepalive: true,
+    }).catch(() => {});
+  })();
+</script>

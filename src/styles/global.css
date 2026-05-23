@@ -165,3 +165,133 @@ img {
   border: 1px solid #3a3f5a;
   border-radius: 8px;
 }
+
+body.traffic-page {
+  max-width: 1100px;
+}
+
+.traffic-header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.traffic-header h1 {
+  margin: 0;
+  font-size: 2rem;
+}
+
+.traffic-kicker {
+  color: #9aa4cf;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  margin: 0 0 0.25rem;
+  text-transform: uppercase;
+}
+
+.traffic-metrics {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0 0 1rem;
+}
+
+.traffic-metrics article,
+.traffic-panel {
+  background: #1a1b27;
+  border: 1px solid #343951;
+  border-radius: 8px;
+}
+
+.traffic-metrics article {
+  padding: 1rem;
+}
+
+.traffic-metrics span,
+.traffic-meta,
+.traffic-recent small {
+  color: #9aa4cf;
+}
+
+.traffic-metrics strong {
+  display: block;
+  font-size: 2rem;
+  line-height: 1.1;
+  margin-top: 0.35rem;
+}
+
+.traffic-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  font-size: 0.9rem;
+  margin-bottom: 1.25rem;
+}
+
+.traffic-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 1rem;
+}
+
+.traffic-panel {
+  overflow: auto;
+  padding: 1rem;
+}
+
+.traffic-panel h2 {
+  font-size: 1rem;
+  margin: 0 0 0.75rem;
+}
+
+.traffic-panel table {
+  border-collapse: collapse;
+  min-width: 100%;
+}
+
+.traffic-panel th,
+.traffic-panel td {
+  border-top: 1px solid #2a2f45;
+  padding: 0.55rem 0.35rem;
+  text-align: left;
+  vertical-align: top;
+  white-space: nowrap;
+}
+
+.traffic-panel td {
+  color: #dce1ff;
+}
+
+.traffic-panel th {
+  color: #dce1ff;
+  font-weight: 500;
+}
+
+.traffic-panel td:last-child {
+  text-align: right;
+}
+
+.traffic-recent {
+  margin-bottom: 2rem;
+}
+
+.traffic-recent small {
+  display: block;
+  font-size: 0.78rem;
+  margin-top: 0.15rem;
+}
+
+@media (max-width: 800px) {
+  .traffic-header {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .traffic-metrics,
+  .traffic-grid {
+    grid-template-columns: 1fr;
+  }
+}

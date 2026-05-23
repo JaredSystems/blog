@@ -1,6 +1,9 @@
 ---
 import "../styles/global.css";
+import VisitBeacon from "../components/VisitBeacon.astro";
 import ResourceContent from "../content/resources.md";
+
+export const prerender = true;
 
 ---
 
@@ -30,7 +33,7 @@ import ResourceContent from "../content/resources.md";
         <ResourceContent />
 	</main>
 
+	<VisitBeacon />
 
   </body>
 </html>
-

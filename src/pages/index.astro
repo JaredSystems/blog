@@ -1,5 +1,6 @@
 ---
 import "../styles/global.css";
+import VisitBeacon from "../components/VisitBeacon.astro";
 import { getCollection } from "astro:content";
 const writings = await getCollection("writings");
 
@@ -15,6 +16,8 @@ import IndexContent from "../content/index.md"
 import ProjectContent from "../content/projects.md"
 import ExperienceContent from "../content/experience.md"
 import EducationContent from "../content/education.md"
+
+export const prerender = true;
 
 const timelineItems = [
 	{
@@ -161,5 +164,6 @@ const timelineItems = [
     ))}
   </ul> -->
 	</section>
+	<VisitBeacon />
   </body>
 </html>

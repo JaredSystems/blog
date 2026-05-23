@@ -1,5 +1,8 @@
 ---
 import "../styles/global.css";
+import VisitBeacon from "../components/VisitBeacon.astro";
+
+export const prerender = true;
 
 const screenshots = [
   {
@@ -77,5 +80,6 @@ const screenshots = [
         ))}
       </section>
     </main>
+    <VisitBeacon />
   </body>
 </html>
