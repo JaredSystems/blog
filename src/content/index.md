@@ -4,7 +4,7 @@ title: "Home Page Index"
 
 I'm Jared. I'm 26 years old and based out of Miami, FL.
 
-I'm a software engineer currently focused on offline first systems and hardware integrations.
+I'm a software engineer currently focused on offline-first systems and hardware integrations.
 
 Nowadays i'm working on [@marmotsystems](https://www.marmotsystems.com/) — a direct store delivery platform for distribution companies.
 

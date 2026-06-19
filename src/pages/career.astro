@@ -1,10 +1,10 @@
 ---
 import "../styles/global.css";
 import VisitBeacon from "../components/VisitBeacon.astro";
-import ResourceContent from "../content/resources.md";
+import ExperienceContent from "../content/experience.md";
+import EducationContent from "../content/education.md";
 
 export const prerender = true;
-
 ---
 
 <!doctype html>
@@ -14,27 +14,31 @@ export const prerender = true;
 		<meta name="viewport" content="width=device-width" />
 		<link rel="icon" type="image/svg+xml" href="" />
 		<meta name="generator" content={Astro.generator} />
-		<title>jaredsystems</title>
+		<title>career - jaredsystems</title>
 	</head>
   <body>
 		<div class="img-wrapper">
 <img class="pfp-img" src="/jared-black-bg.png" alt="jared" />
   <h2>jared</h2>
 </div>
+
 <nav class="nav">
-  <div><a href="/" >home</a></div>
-  <div><a href="/career">career</a></div>
-  	<div><a href="/resources" class="active">resources</a></div>
+  <div><a href="/">home</a></div>
+  <div><a href="/career" class="active">career</a></div>
+  <div><a href="/resources">resources</a></div>
 	<div><a href="https://github.com/JaredSystems">github</a></div>
-		<!-- <div><a href="https://x.com/jaredsystems">x.com</a></div> -->
-	
-	</nav>
+</nav>
 
 	<main class="main">
-        <ResourceContent />
+		<section class="section">
+		  <ExperienceContent/>
+		</section>
+
+		<section class="section">
+		  <EducationContent/>
+		</section>
 	</main>
 
 	<VisitBeacon />
-
   </body>
 </html>

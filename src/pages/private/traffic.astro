@@ -11,19 +11,17 @@ import {
 
 export const prerender = false;
 
-const noIndexHeaders = {
-  "cache-control": "private, no-store",
-  "content-type": "text/plain; charset=utf-8",
-  "x-robots-tag": "noindex, nofollow",
-};
-
 Astro.response.headers.set("cache-control", "private, no-store");
 Astro.response.headers.set("x-robots-tag", "noindex, nofollow");
 
 if (!isAnalyticsAuthorized(Astro.url, Astro.request)) {
   return new Response("Not found", {
     status: 404,
-    headers: noIndexHeaders,
+    headers: {
+      "cache-control": "private, no-store",
+      "content-type": "text/plain; charset=utf-8",
+      "x-robots-tag": "noindex, nofollow",
+    },
   });
 }
 

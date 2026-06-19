@@ -1,0 +1,86 @@
+---
+import { books, bookTags } from "../data/books";
+
+const hasNote = (note: (typeof books)[number]["note"]) =>
+  Array.isArray(note) ? note.some((part) => part.text.trim()) : note.trim();
+---
+
+<section class="books-section" aria-labelledby="books-heading">
+  <div class="books-toolbar">
+    <h1 id="books-heading">Books I'm reading / Books I've read</h1>
+    <select class="book-select" data-book-filter aria-label="Filter books by tag">
+      <option value="all">all</option>
+      {bookTags.map((tag) => <option value={tag.value}>{tag.label}</option>)}
+    </select>
+  </div>
+
+  <div class="book-grid" data-book-grid>
+    {books.map((book) => (
+      <article class="book-card" data-book-card data-tags={book.tags.join(" ")}>
+        <div class={`book-cover-shell${book.cover ? "" : " cover-missing"}`}>
+          {book.cover && (
+            <img
+              class="book-cover"
+              data-book-cover
+              src={book.cover}
+              alt={`Cover of ${book.title}`}
+              loading="lazy"
+              decoding="async"
+            />
+          )}
+          <div class="book-cover-fallback" aria-hidden="true">
+            <span>{book.title}</span>
+          </div>
+        </div>
+        <div class="book-copy">
+          <h2>{book.title}</h2>
+          <p class="book-author">{book.author}</p>
+          {hasNote(book.note) && (
+            <p>
+              {Array.isArray(book.note)
+                ? book.note.map((part) => part.strike ? <s>{part.text}</s> : part.text)
+                : book.note}
+            </p>
+          )}
+          <div class="book-tag-list" aria-label="Book tags">
+            {book.tags.map((tagValue) => {
+              const tag = bookTags.find((item) => item.value === tagValue);
+              return tag ? <span>{tag.label}</span> : null;
+            })}
+          </div>
+        </div>
+      </article>
+    ))}
+  </div>
+
+  <p class="book-empty" data-book-empty hidden>No books here yet.</p>
+</section>
+
+<script>
+  const filter = document.querySelector<HTMLSelectElement>("[data-book-filter]");
+  const cards = Array.from(document.querySelectorAll<HTMLElement>("[data-book-card]"));
+  const empty = document.querySelector<HTMLElement>("[data-book-empty]");
+
+  const updateBooks = () => {
+    const activeTag = filter?.value || "all";
+    let visibleCount = 0;
+
+    cards.forEach((card) => {
+      const tags = card.getAttribute("data-tags")?.split(" ") || [];
+      const isVisible = activeTag === "all" || tags.includes(activeTag);
+      card.hidden = !isVisible;
+      if (isVisible) visibleCount += 1;
+    });
+
+    if (empty) empty.hidden = visibleCount > 0;
+  };
+
+  filter?.addEventListener("change", updateBooks);
+  updateBooks();
+
+  document.querySelectorAll<HTMLImageElement>("[data-book-cover]").forEach((cover) => {
+    cover.addEventListener("error", () => {
+      cover.closest(".book-cover-shell")?.classList.add("cover-missing");
+    });
+  });
+</script>

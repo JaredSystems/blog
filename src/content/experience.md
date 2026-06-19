@@ -8,7 +8,7 @@ title: "Experience Section"
 
 - Built Marmot as the only engineer in the organization.
 
-- Implemented a resilient and reliable custom bi-directional sync engine with conflict resolution, idempotency, and offline first operation.
+- Implemented a resilient and reliable custom bi-directional sync engine with conflict resolution, idempotency, and offline-first operation.
 
 - Engineered hardware integrations including workflows consisting of BLE connectivity and zebra thermal printing.
 
