@@ -49,6 +49,13 @@ export const books: Book[] = [
     note: "Humans don't make logical decisions. Tap into their emotions, and you'll get anything you want. Working people is a science.",
   },
   {
+    title: "Thinking, Fast and Slow",
+    author: "Daniel Kahneman",
+    cover: "/books/thinking-fast-and-slow.jpg",
+    tags: ["changed-my-life", "psychology"],
+    note: `It doesn't matter how complex or inconsequential your thinking may be; your intuition is naturally vulnerable to systematic errors, and you must learn to reject those errors. Even in your own thinking, you must learn to embrace the uncertainty of things that seem undeniably wrong but are inescapably true.`,
+  },
+  {
     title: "Hope and Help for Your Nerves",
     author: "Claire Weekes",
     cover: "https://covers.openlibrary.org/b/id/13305028-L.jpg",
