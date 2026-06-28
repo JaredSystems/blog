@@ -1,10 +1,10 @@
-## Full Stack
+# Research Papers
 
 ## Security
 
 - [Secure Programming by David A. Wheeler](https://dwheeler.com/secure-programs/3.71/Secure-Programs-HOWTO/index.html)
 
-## FOSS
+## Open Source Software
 
 - [Why Open Source Software / Free Software (OSS/FS, FLOSS, or FOSS)? Look at the Numbers! by David A. Wheeler](https://dwheeler.com/oss_fs_why.html)
 
