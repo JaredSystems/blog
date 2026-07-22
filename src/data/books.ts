@@ -53,7 +53,7 @@ export const books: Book[] = [
     author: "Daniel Kahneman",
     cover: "/books/thinking-fast-and-slow.jpg",
     tags: ["changed-my-life", "psychology"],
-    note: `It doesn't matter how complex or inconsequential your thinking may be; your intuition is naturally vulnerable to systematic errors, and you must learn to reject those errors. Even in your own thinking, you must learn to embrace the uncertainty of things that seem undeniably wrong but are inescapably true.`,
+    note: `It doesn't matter how complex or inconsequential your thinking may be; your intuition is naturally vulnerable to systematic errors, and you must learn to reject those errors.`,
   },
   {
     title: "Hope and Help for Your Nerves",
