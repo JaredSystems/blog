@@ -2,9 +2,18 @@
 import "../styles/global.css";
 import VisitBeacon from "../components/VisitBeacon.astro";
 import IndexContent from "../content/index.md"
-import Bookshelf from "../components/Bookshelf.astro";
+import { getCollection } from "astro:content";
 
 export const prerender = true;
+
+const writings = (await getCollection("writings")).sort(
+  (a, b) => b.data.article_date.getTime() - a.data.article_date.getTime(),
+);
+
+const dateFormatter = new Intl.DateTimeFormat("en-US", {
+  dateStyle: "medium",
+  timeZone: "UTC",
+});
 ---
 
 <!doctype html>
@@ -25,8 +34,10 @@ export const prerender = true;
 
 <nav class="nav">
   <div><a href="/" class="active">home</a></div>
+    <div><a href="/books">books</a></div>
   <div><a href="/career">career</a></div>
-  	<div><a href="/papers" >papers</a></div>
+  <div><a href="/papers">papers</a></div>
+
 	<div><a href="https://github.com/JaredSystems">github</a></div>
 		<!-- <div><a href="https://x.com/jaredsystems">x.com</a></div> -->
 	
@@ -36,7 +47,19 @@ export const prerender = true;
 
 		<IndexContent/>
 
-		<Bookshelf/>
+		<section class="section" aria-labelledby="writings-heading">
+			<h2 id="writings-heading">Personal Writings</h2>
+			<ul>
+				{writings.map((writing) => (
+					<li>
+						<a href={`/writings/${writing.slug}`}>{writing.data.title}</a>{" "}
+						<time datetime={writing.data.article_date.toISOString()}>
+							— {dateFormatter.format(writing.data.article_date)}
+						</time>
+					</li>
+				))}
+			</ul>
+		</section>
 	</main>
 
 	<VisitBeacon />

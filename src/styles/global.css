@@ -27,12 +27,12 @@ body {
   color: #dce1ff;
 }
 
-body.home-page .main > :not(.books-section) {
+body.home-page .main {
   max-width: 65ch;
 }
 
-body:not(.home-page):not(.traffic-page) .main,
-body:not(.home-page):not(.traffic-page) > main {
+body:not(.home-page):not(.books-page):not(.traffic-page) .main,
+body:not(.home-page):not(.books-page):not(.traffic-page) > main {
   max-width: 65ch;
 }
 
