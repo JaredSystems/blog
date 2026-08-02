@@ -12,7 +12,7 @@ Currently working on [@marmotsystems](https://www.marmotsystems.com/) — a dire
 
 Pre-AI era, I spent my time engineering software, unpacking abstractions, and eliminating technical debt.
 
-Nowadays, I try to focus on learning computer science fundamentals from first principles thinking.
+Nowadays, I try to focus on learning computer science fundamentals through first principles thinking.
 
 My greatest weakness is that I know nothing. My greatest strength is that I am consciously aware of it.
 
