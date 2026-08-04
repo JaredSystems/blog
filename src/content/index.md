@@ -14,6 +14,4 @@ Pre-AI era, I spent my time engineering software, unpacking abstractions, and el
 
 Nowadays, I try to focus on learning computer science fundamentals through first principles thinking.
 
-My greatest weakness is that I know nothing. My greatest strength is that I am consciously aware of it.
-
 <!-- If you would like to hire me, work with me, or just chat, you can [email](mailto:jaredgomez0812@gmail.com) me or schedule a [call](https://cal.com/jaredsystems). -->
