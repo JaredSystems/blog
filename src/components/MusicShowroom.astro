@@ -1,0 +1,159 @@
+---
+import { musicTracks } from "../data/music";
+---
+
+<section class="music-showroom" aria-labelledby="music-heading">
+  <header class="music-showroom-heading">
+    <div>
+      <p class="music-kicker">current rotation</p>
+      <h1 id="music-heading">Music I'm obsessed with</h1>
+    </div>
+    <p>{musicTracks.length} tracks</p>
+  </header>
+
+  <div class="track-grid">
+    {musicTracks.map((track, index) => (
+      <article class="track-card">
+        <div class="track-cover-shell">
+          <img
+            class="track-cover"
+            src={track.cover}
+            alt={`${track.album} album cover`}
+            loading={index < 4 ? "eager" : "lazy"}
+            decoding="async"
+          />
+          <span class="track-number" aria-hidden="true">
+            {String(index + 1).padStart(2, "0")}
+          </span>
+        </div>
+
+        <div class="track-copy">
+          <h2>{track.title}</h2>
+          <p class="track-artist">{track.artist}</p>
+          <p class="track-album">{track.album} · {track.year}</p>
+        </div>
+
+        <button
+          class="preview-button"
+          type="button"
+          data-track-player
+          data-preview={track.preview}
+          data-track-title={track.title}
+          aria-label={`Play a preview of ${track.title}`}
+          aria-pressed="false"
+        >
+          <span class="preview-icon" aria-hidden="true">
+            <svg class="play-icon" viewBox="0 0 16 16">
+              <path d="M4 2.7v10.6L13 8 4 2.7Z" fill="currentColor"></path>
+            </svg>
+            <svg class="pause-icon" viewBox="0 0 16 16">
+              <path d="M3.5 2.5h3v11h-3zm6 0h3v11h-3z" fill="currentColor"></path>
+            </svg>
+          </span>
+          <span class="preview-copy">
+            <span data-preview-label>play preview</span>
+            <span class="preview-progress" aria-hidden="true">
+              <span data-preview-progress></span>
+            </span>
+          </span>
+        </button>
+
+        <a class="track-link" href={track.url} target="_blank" rel="noreferrer">
+          Apple Music <span aria-hidden="true">↗</span>
+        </a>
+      </article>
+    ))}
+  </div>
+
+</section>
+
+<script>
+  const players = Array.from(
+    document.querySelectorAll<HTMLButtonElement>("[data-track-player]"),
+  );
+
+  let activeAudio: HTMLAudioElement | null = null;
+  let activeButton: HTMLButtonElement | null = null;
+
+  const setPlaying = (button: HTMLButtonElement, playing: boolean) => {
+    button.dataset.playing = String(playing);
+    button.setAttribute("aria-pressed", String(playing));
+    button.setAttribute(
+      "aria-label",
+      `${playing ? "Pause" : "Play"} a preview of ${button.dataset.trackTitle}`,
+    );
+
+    const label = button.querySelector<HTMLElement>("[data-preview-label]");
+    if (label) label.textContent = playing ? "pause preview" : "play preview";
+  };
+
+  const resetProgress = (button: HTMLButtonElement) => {
+    const progress = button.querySelector<HTMLElement>("[data-preview-progress]");
+    if (progress) progress.style.width = "0%";
+  };
+
+  const markUnavailable = (button: HTMLButtonElement) => {
+    setPlaying(button, false);
+    const label = button.querySelector<HTMLElement>("[data-preview-label]");
+    if (label) label.textContent = "preview unavailable";
+  };
+
+  players.forEach((button) => {
+    button.addEventListener("click", async () => {
+      if (activeButton === button && activeAudio) {
+        if (activeAudio.paused) {
+          try {
+            await activeAudio.play();
+            setPlaying(button, true);
+          } catch {
+            markUnavailable(button);
+          }
+        } else {
+          activeAudio.pause();
+          setPlaying(button, false);
+        }
+        return;
+      }
+
+      if (activeAudio && activeButton) {
+        activeAudio.pause();
+        setPlaying(activeButton, false);
+        resetProgress(activeButton);
+      }
+
+      const preview = button.dataset.preview;
+      if (!preview) return;
+
+      const audio = new Audio(preview);
+      activeAudio = audio;
+      activeButton = button;
+
+      audio.addEventListener("timeupdate", () => {
+        const progress = button.querySelector<HTMLElement>("[data-preview-progress]");
+        if (progress && Number.isFinite(audio.duration)) {
+          progress.style.width = `${(audio.currentTime / audio.duration) * 100}%`;
+        }
+      });
+
+      audio.addEventListener("ended", () => {
+        setPlaying(button, false);
+        resetProgress(button);
+        activeAudio = null;
+        activeButton = null;
+      });
+
+      audio.addEventListener("error", () => {
+        markUnavailable(button);
+        activeAudio = null;
+        activeButton = null;
+      });
+
+      try {
+        await audio.play();
+        setPlaying(button, true);
+      } catch {
+        markUnavailable(button);
+      }
+    });
+  });
+</script>

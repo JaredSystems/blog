@@ -1,0 +1,58 @@
+---
+import "../styles/global.css";
+import MusicShowroom from "../components/MusicShowroom.astro";
+import VisitBeacon from "../components/VisitBeacon.astro";
+
+export const prerender = true;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="icon" type="image/svg+xml" href="" />
+    <meta name="generator" content={Astro.generator} />
+    <meta
+      name="description"
+      content="Music in heavy rotation for Jared Systems."
+    />
+    <title>music - jaredsystems</title>
+  </head>
+  <body class="music-page">
+    <div class="img-wrapper">
+      <img class="pfp-img" src="/jared-black-bg.png" alt="jared" />
+      <h2>jared</h2>
+    </div>
+
+    <nav class="nav">
+      <div><a href="/">home</a></div>
+      <div><a href="/books">books</a></div>
+      <div><a href="/music" class="active">music</a></div>
+      <div><a href="/career">career</a></div>
+      <div><a href="/papers">papers</a></div>
+      <div><a href="https://github.com/JaredSystems">github</a></div>
+    </nav>
+
+    <main class="main">
+      <section class="music-video" aria-label="Kanye West video">
+        <video autoplay loop playsinline controls preload="metadata">
+          <source src="/kanye-west-split.mp4" type="video/mp4" />
+          Your browser does not support the video tag.
+        </video>
+      </section>
+
+      <p class="music-observation">
+        There seems to be a pattern. Only neurodivergent schizophrenics,
+        eccentric geniuses, and neurologically abused minds are obsessed with
+        Kanye's music. Obviously, this excludes the bottom percentile of
+        shallow minds that can only capture rhythm over art. Nonetheless, it's
+        a rather weird observation I've developed.
+      </p>
+
+      <MusicShowroom />
+    </main>
+
+    <VisitBeacon />
+  </body>
+</html>

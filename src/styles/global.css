@@ -31,8 +31,8 @@ body.home-page .main {
   max-width: 65ch;
 }
 
-body:not(.home-page):not(.books-page):not(.traffic-page) .main,
-body:not(.home-page):not(.books-page):not(.traffic-page) > main {
+body:not(.home-page):not(.books-page):not(.music-page):not(.traffic-page) .main,
+body:not(.home-page):not(.books-page):not(.music-page):not(.traffic-page) > main {
   max-width: 65ch;
 }
 
@@ -190,6 +190,223 @@ a.active {
 .book-empty {
   color: #9aa4cf;
   margin-top: 1rem;
+}
+
+.music-video {
+  background: #090a0f;
+  border: 1px solid #343951;
+  border-radius: 10px;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
+  overflow: hidden;
+}
+
+.music-video video {
+  aspect-ratio: 16 / 9;
+  display: block;
+  object-fit: cover;
+  width: 100%;
+}
+
+.music-observation {
+  color: #c5cae8;
+  font-size: 1rem;
+  margin: 1.5rem 0 0;
+  max-width: 72ch;
+}
+
+.music-showroom {
+  margin: 3rem 0 2rem;
+}
+
+.music-showroom-heading {
+  align-items: end;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  margin-bottom: 1.15rem;
+}
+
+.music-showroom-heading h1 {
+  font-size: 1.65rem;
+  line-height: 1.15;
+  margin: 0;
+}
+
+.music-showroom-heading > p,
+.music-kicker {
+  color: #9aa4cf;
+}
+
+.music-showroom-heading > p {
+  font-size: 0.82rem;
+  margin: 0 0 0.1rem;
+  white-space: nowrap;
+}
+
+.music-kicker {
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  margin: 0 0 0.3rem;
+  text-transform: uppercase;
+}
+
+.track-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.track-card {
+  background: #1a1b27;
+  border: 1px solid #343951;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  transition: border-color 160ms ease, transform 160ms ease;
+}
+
+.track-card:hover {
+  border-color: #4e587c;
+  transform: translateY(-2px);
+}
+
+.track-cover-shell {
+  aspect-ratio: 1;
+  background: #10111a;
+  overflow: hidden;
+  position: relative;
+}
+
+.track-cover {
+  height: 100%;
+  object-fit: cover;
+  transition: transform 240ms ease;
+  width: 100%;
+}
+
+.track-card:hover .track-cover {
+  transform: scale(1.025);
+}
+
+.track-number {
+  background: rgba(10, 10, 15, 0.76);
+  border: 1px solid rgba(220, 225, 255, 0.28);
+  border-radius: 999px;
+  color: #fff;
+  font-size: 0.68rem;
+  left: 0.65rem;
+  letter-spacing: 0.08em;
+  padding: 0.2rem 0.43rem;
+  position: absolute;
+  top: 0.65rem;
+}
+
+.track-copy {
+  flex: 1;
+  padding: 0.85rem 0.85rem 0;
+}
+
+.track-copy h2 {
+  font-size: 1rem;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.track-copy p {
+  margin: 0.35rem 0 0;
+}
+
+.track-artist {
+  color: #c5cae8;
+  font-size: 0.8rem;
+  line-height: 1.3;
+}
+
+.track-album {
+  color: #8e97be;
+  font-size: 0.74rem;
+  line-height: 1.3;
+}
+
+.preview-button {
+  align-items: center;
+  background: #222437;
+  border: 1px solid #3a3f5a;
+  border-radius: 6px;
+  color: #dce1ff;
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  gap: 0.55rem;
+  margin: 0.85rem 0.85rem 0;
+  padding: 0.48rem 0.55rem;
+  text-align: left;
+}
+
+.preview-button:hover,
+.preview-button:focus-visible {
+  border-color: #51f9ff;
+}
+
+.preview-icon {
+  align-items: center;
+  background: #51f9ff;
+  border-radius: 999px;
+  color: #10111a;
+  display: flex;
+  flex: 0 0 1.65rem;
+  height: 1.65rem;
+  justify-content: center;
+}
+
+.preview-icon svg {
+  height: 0.78rem;
+  width: 0.78rem;
+}
+
+.pause-icon,
+.preview-button[data-playing="true"] .play-icon {
+  display: none;
+}
+
+.preview-button[data-playing="true"] .pause-icon {
+  display: block;
+}
+
+.preview-copy {
+  color: #dce1ff;
+  display: grid;
+  flex: 1;
+  font-size: 0.7rem;
+  gap: 0.32rem;
+  min-width: 0;
+  text-transform: lowercase;
+}
+
+.preview-progress {
+  background: #3a3f5a;
+  border-radius: 999px;
+  height: 2px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.preview-progress span {
+  background: #51f9ff;
+  display: block;
+  height: 100%;
+  transition: width 100ms linear;
+  width: 0;
+}
+
+.track-link {
+  border-top: 1px solid #2d3147;
+  display: block;
+  font-size: 0.73rem;
+  margin-top: 0.75rem;
+  padding: 0.65rem 0.85rem;
 }
 
 .timeline-section {
@@ -430,11 +647,19 @@ body.traffic-page {
   .book-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .track-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 520px) {
   .book-grid {
     grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  }
+
+  .track-grid {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   }
 
   .book-card {
@@ -452,5 +677,21 @@ body.traffic-page {
 
   .book-select {
     width: 100%;
+  }
+
+  .nav {
+    flex-wrap: wrap;
+  }
+
+  .track-card:hover,
+  .track-card:hover .track-cover {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .track-card,
+  .track-cover {
+    transition: none;
   }
 }
