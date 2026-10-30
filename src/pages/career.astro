@@ -1,6 +1,6 @@
 ---
 import "../styles/global.css";
-import VisitBeacon from "../components/VisitBeacon.astro";
+import GoogleAnalytics from "../components/GoogleAnalytics.astro";
 import ExperienceContent from "../content/experience.md";
 import EducationContent from "../content/education.md";
 
@@ -15,6 +15,7 @@ export const prerender = true;
 		<link rel="icon" type="image/svg+xml" href="" />
 		<meta name="generator" content={Astro.generator} />
 		<title>career - jaredsystems</title>
+		<GoogleAnalytics />
 	</head>
   <body>
 		<div class="img-wrapper">
@@ -42,6 +43,5 @@ export const prerender = true;
 		</section>
 	</main>
 
-	<VisitBeacon />
   </body>
 </html>

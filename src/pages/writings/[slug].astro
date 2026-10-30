@@ -1,6 +1,6 @@
 ---
 import "../../styles/global.css";
-import VisitBeacon from "../../components/VisitBeacon.astro";
+import GoogleAnalytics from "../../components/GoogleAnalytics.astro";
 
 import { getCollection } from "astro:content";
 
@@ -34,6 +34,7 @@ const formatDateUTC = (d: string | Date) => fmtUTC.format(getDate(d));
 		<link rel="icon" type="image/svg+xml" href="" />
 		<meta name="generator" content={Astro.generator} />
     <title>{post.data.title}</title>	
+    <GoogleAnalytics />
   </head>
  
   <body>
@@ -58,6 +59,5 @@ const formatDateUTC = (d: string | Date) => fmtUTC.format(getDate(d));
       <p>{post.data.description}</p>
       <Content />
     </main>
-    <VisitBeacon />
   </body>
 </html>

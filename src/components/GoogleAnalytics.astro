@@ -1,0 +1,33 @@
+---
+const measurementId = import.meta.env.PUBLIC_GA_MEASUREMENT_ID || "";
+// Astro production builds also run for previews. Require Vercel's production
+// environment explicitly so neither local builds nor preview deployments track.
+const enabled =
+  import.meta.env.PROD &&
+  process.env.VERCEL_ENV === "production" &&
+  /^G-[A-Z0-9]+$/.test(measurementId);
+---
+
+{enabled && (
+  <script is:inline define:vars={{ measurementId }} data-google-analytics>
+    (() => {
+      // Also protect production artifacts opened locally or on deployment URLs.
+      const { hostname, protocol, port } = window.location;
+      if (
+        protocol !== "https:" ||
+        port !== "" ||
+        !["jaredsystems.com", "www.jaredsystems.com"].includes(hostname)
+      ) return;
+
+      window.dataLayer = window.dataLayer || [];
+      window.gtag = function () { window.dataLayer.push(arguments); };
+      window.gtag("js", new Date());
+      window.gtag("config", measurementId);
+
+      const script = document.createElement("script");
+      script.async = true;
+      script.src = `https://www.googletagmanager.com/gtag/js?id=${measurementId}`;
+      document.head.appendChild(script);
+    })();
+  </script>
+)}

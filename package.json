@@ -6,6 +6,7 @@
     "dev": "astro dev",
     "build": "astro build",
     "typecheck": "astro check",
+    "test:analytics": "node scripts/test-analytics.mjs",
     "preview": "astro preview",
     "astro": "astro"
   },

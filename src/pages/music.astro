@@ -1,7 +1,7 @@
 ---
 import "../styles/global.css";
 import MusicShowroom from "../components/MusicShowroom.astro";
-import VisitBeacon from "../components/VisitBeacon.astro";
+import GoogleAnalytics from "../components/GoogleAnalytics.astro";
 
 export const prerender = true;
 ---
@@ -18,6 +18,7 @@ export const prerender = true;
       content="Music in heavy rotation for Jared Systems."
     />
     <title>music - jaredsystems</title>
+    <GoogleAnalytics />
   </head>
   <body class="music-page">
     <div class="img-wrapper">
@@ -52,6 +53,5 @@ export const prerender = true;
       <MusicShowroom />
     </main>
 
-    <VisitBeacon />
   </body>
 </html>

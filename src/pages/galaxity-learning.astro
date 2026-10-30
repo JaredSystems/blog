@@ -1,6 +1,6 @@
 ---
 import "../styles/global.css";
-import VisitBeacon from "../components/VisitBeacon.astro";
+import GoogleAnalytics from "../components/GoogleAnalytics.astro";
 
 export const prerender = true;
 
@@ -48,6 +48,7 @@ const screenshots = [
     <link rel="icon" type="image/svg+xml" href="" />
     <meta name="generator" content={Astro.generator} />
     <title>Galaxity Learning | jaredsystems</title>
+    <GoogleAnalytics />
   </head>
   <body>
     <div class="img-wrapper">
@@ -84,6 +85,5 @@ const screenshots = [
         ))}
       </section>
     </main>
-    <VisitBeacon />
   </body>
 </html>
