@@ -1,5 +1,5 @@
 import { isIP } from "node:net";
-import { clean, privateHash, TRAFFIC_PREFIX, type LocationEstimate } from "./traffic";
+import { clean, geoLiteEnabled, privateHash, TRAFFIC_PREFIX, type LocationEstimate } from "./traffic";
 import { incrementWindow, redis } from "./traffic-store";
 
 export function vercelLocation(headers: Headers): LocationEstimate {
@@ -19,6 +19,9 @@ export function requestIP(request: Request): string {
 
 export async function locate(request: Request) {
   const fallback = vercelLocation(request.headers);
+  // Disabled by default, even if credentials remain configured. Do not read
+  // the GeoLite cache, spend quota, or transmit visitor IPs while inactive.
+  if (!geoLiteEnabled()) return { location: fallback, geoStatus: "vercel" as const };
   const account = process.env.MAXMIND_ACCOUNT_ID;
   const license = process.env.MAXMIND_LICENSE_KEY;
   const ip = requestIP(request);

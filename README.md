@@ -16,7 +16,7 @@ previews, and deployment-specific `*.vercel.app` URLs do not track visits.
 `/private/traffic` shows timestamped pageviews and outbound clicks, entry sources,
 estimated city/region/country/ZIP, browser details, and a per-tab session timeline.
 Date filters use UTC days; event timestamps display in America/New_York.
-Search covers location, ZIP, source/campaign, page, and destination. Results are
+Search covers approximate area, location, ZIP, source/campaign, page, and destination. Results are
 paginated, 50 per page; summary counts reflect all matching retained events.
 
 Set `TRAFFIC_ENABLED=true` **only in Vercel Production**. The browser component
@@ -65,24 +65,48 @@ The public collector validates origin, payload size/shape and timestamp, and
 applies a per-IP minute rate limit using a short-lived keyed hash. This reduces
 abuse; it cannot prove that every accepted event came from a real human.
 
-### Optional free GeoLite city lookup
+### Approximate area labels
 
-Create a free [MaxMind GeoLite account](https://dev.maxmind.com/geoip/geolite2-free-geolocation-data/)
-and configure `MAXMIND_ACCOUNT_ID` and `MAXMIND_LICENSE_KEY` as **Production-only**
-server secrets. Redeploy to activate. The integration is hard-coded to the free
+The dashboard adds a clearly labeled area hint from a curated ZIP lookup in
+`src/lib/traffic-location.ts`. Current coverage is **US / FL / 33196 → The Hammocks
+/ West Kendall**, based on [Hammocks Community Park](https://www.miamidade.gov/parks/hammocks.asp)
+and [West Kendall Regional Library's county listing](https://www.miamidade.gov/initiative/weather-ready/extreme-heat/cooling-sites.page).
+These names provide local context, not an exhaustive ZIP boundary or a confirmed
+visitor neighborhood. ZIPs and community boundaries do not align exactly; see
+the [Census explanation](https://www.census.gov/programs-surveys/geography/guidance/geo-areas/usps_census_city.html).
+
+The provider's original city and ZIP remain visible. Unmapped ZIPs, missing
+country/region/ZIP, and locations outside US/FL do not get a guessed area label.
+Five-digit ZIPs and ZIP+4 are supported. The lookup is local and makes no extra
+network requests. Area names are searchable, including on existing records.
+Add more ZIPs only after verifying sources; no new dependency or paid API is used.
+
+### Optional free GeoLite city lookup (currently disabled)
+
+MaxMind is off by default and explicitly disabled in Production with
+`MAXMIND_ENABLED=false`. Existing credentials alone cannot enable it. While off,
+the collector uses Vercel without contacting MaxMind, reading the GeoLite cache,
+or spending lookup quota. The dashboard hides old GeoLite estimates and excludes
+them from location search. Older records use their separately saved Vercel copy;
+if that copy is absent, the location is shown as unknown. Stored history is not rewritten.
+
+The integration is retained for deliberate future re-enablement. A free
+[MaxMind GeoLite account](https://dev.maxmind.com/geoip/geolite2-free-geolocation-data/),
+`MAXMIND_ACCOUNT_ID`, `MAXMIND_LICENSE_KEY`, and **`MAXMIND_ENABLED=true`** are all
+required as **Production-only** settings. Redeploy to activate. It uses the free
 `geolite.info` City service, never the paid `geoip.maxmind.com` service.
 Lookups share a 900-request UTC-day cap and a 24-hour cache keyed by an HMAC of
 the IP. The raw IP is sent to MaxMind for this optional lookup but not stored in
 the event or cache key. Respect the account's actual quota, which can change and
 may also be consumed by other applications.
 
-The dashboard shows Vercel first and GeoLite alongside it, with both estimates
+If re-enabled, the dashboard shows Vercel first and GeoLite alongside it, with both estimates
 visible and conflicting city, ZIP, region, or country fields flagged. Display
 order does not establish which provider is correct. Existing records use the
 same presentation without rewriting their stored estimates. Missing fields do
 not count as disagreements. GeoLite's accuracy radius stays visible when supplied.
-The dashboard never substitutes a neighborhood
-from an estimated ZIP or combines a Vercel ZIP with a GeoLite city. Missing
+The dashboard keeps ZIP-derived area hints separate from provider cities and
+never combines a Vercel ZIP with a GeoLite city. Missing
 credentials, missing city data, quota exhaustion, or lookup failure use Vercel.
 This does not guarantee more precise or accurate city names; compare providers
 using voluntarily confirmed test locations before drawing that conclusion.

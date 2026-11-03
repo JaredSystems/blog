@@ -46,7 +46,7 @@ try {
   await new Promise(resolve => bridge.listen(0, "127.0.0.1", resolve));
   const storeUrl = `http://127.0.0.1:${bridge.address().port}`;
   Object.assign(process.env, { KV_REST_API_URL: storeUrl, KV_REST_API_TOKEN: "test-only-token", ANALYTICS_SECRET: secret, TRAFFIC_ENABLED: "true", VERCEL_ENV: "production" });
-  delete process.env.MAXMIND_ACCOUNT_ID; delete process.env.MAXMIND_LICENSE_KEY;
+  delete process.env.MAXMIND_ACCOUNT_ID; delete process.env.MAXMIND_LICENSE_KEY; delete process.env.MAXMIND_ENABLED;
   globalThis.fetch = async (url, options) => {
     if (String(url).startsWith("https://geolite.info/")) {
       geoCalls++;
@@ -58,7 +58,7 @@ try {
     return realFetch(url, options);
   };
   const modulePath = join(temporary, "traffic.mjs");
-  await build({ stdin: { contents: `export * from './src/lib/traffic.ts'; export * from './src/lib/traffic-store.ts'; export * from './src/lib/traffic-geo.ts'; export { POST } from './src/pages/api/traffic.ts';`, resolveDir: process.cwd() }, bundle: true, platform: "node", format: "esm", outfile: modulePath, define: { "import.meta.env.PROD": "true" } });
+  await build({ stdin: { contents: `export * from './src/lib/traffic.ts'; export * from './src/lib/traffic-store.ts'; export * from './src/lib/traffic-geo.ts'; export * from './src/lib/traffic-location.ts'; export { POST } from './src/pages/api/traffic.ts';`, resolveDir: process.cwd() }, bundle: true, platform: "node", format: "esm", outfile: modulePath, define: { "import.meta.env.PROD": "true" } });
   const api = await import(pathToFileURL(modulePath));
   const payload = changes => ({ id: randomUUID(), session: randomUUID(), timestamp: Date.now(), type: "pageview", path: "/", title: "Test", referrer: "https://google.com/search?q=private", ...changes });
   const request = (body, headers = {}, url = `${origin}/api/traffic`) => new Request(url, { method: "POST", headers: { origin, "content-type": "application/json", "user-agent": "Mozilla/5.0 Chrome/130", "x-forwarded-for": "192.0.2.25", "x-vercel-ip-city": "Miami", "x-vercel-ip-country-region": "FL", "x-vercel-ip-country": "US", "x-vercel-ip-postal-code": "33101", ...headers }, body: JSON.stringify(body) });
@@ -131,6 +131,31 @@ try {
   console.log("PASS: storage outage retry and request rate limiting");
 
   process.env.MAXMIND_ACCOUNT_ID = "test-account"; process.env.MAXMIND_LICENSE_KEY = "test-license";
+  const disabledRequest = request(payload(), { "x-vercel-ip-postal-code": "33196" });
+  const beforeDisabled = redisRequests;
+  for (const setting of [undefined, "false", "TRUE", "1"]) {
+    if (setting === undefined) delete process.env.MAXMIND_ENABLED;
+    else process.env.MAXMIND_ENABLED = setting;
+    assert.equal(api.geoLiteEnabled(), false);
+    assert.equal((await api.locate(disabledRequest)).location.postal, "33196");
+  }
+  assert.equal(redisRequests, beforeDisabled, "Disabled GeoLite must not access its cache or quota");
+  assert.equal(geoCalls, 0, "Configured credentials must not enable GeoLite or send visitor IPs");
+  delete process.env.MAXMIND_ENABLED;
+  const disabledVisit = payload();
+  assert.equal((await post(disabledVisit, { "x-vercel-ip-postal-code": "33196" })).status, 204);
+  const disabledEvent = (await api.readEvents(0, Date.now() + 1000)).find(e => e.id === disabledVisit.id);
+  assert.equal(disabledEvent.location.provider, "Vercel");
+  assert.equal(disabledEvent.location.postal, "33196");
+  assert.equal(disabledEvent.geoStatus, "vercel");
+  assert.equal(geoCalls, 0);
+  assert.equal(api.approximateArea(disabledEvent.location), "The Hammocks / West Kendall");
+  assert.equal(api.approximateArea({ ...disabledEvent.location, postal: " 33196-1234 " }), "The Hammocks / West Kendall");
+  for (const change of [{ country: "CA" }, { region: "NY" }, { country: "" }, { region: "" }, { postal: "331960" }, { postal: "33196abc" }, { postal: "33064" }, { postal: "" }]) {
+    assert.equal(api.approximateArea({ ...disabledEvent.location, ...change }), null, "Unknown, invalid, and foreign locations must not acquire an area label");
+  }
+  console.log("PASS: GeoLite defaults off despite credentials; ZIP labels require a known US/FL ZIP");
+  process.env.MAXMIND_ENABLED = "true";
   assert.equal((await post(payload())).status, 204);
   assert.equal((await post(payload())).status, 204);
   assert.equal(geoCalls, 1, "GeoLite result should be cached");
@@ -149,6 +174,13 @@ try {
   assert.equal(conflictingEvent.location.city, "Pompano Beach");
   assert.equal(conflictingEvent.location.postal, "33064");
   assert.equal(conflictingEvent.vercelLocation.postal, "33196");
+  process.env.MAXMIND_ENABLED = "false";
+  const beforeCachedDisabled = { redis: redisRequests, geo: geoCalls };
+  const disabledCached = await api.locate(request(payload(), { "x-forwarded-for": "192.0.2.29", "x-vercel-ip-postal-code": "33196" }));
+  assert.equal(disabledCached.location.provider, "Vercel");
+  assert.equal(disabledCached.location.postal, "33196");
+  assert.deepEqual({ redis: redisRequests, geo: geoCalls }, beforeCachedDisabled, "Disabling GeoLite must bypass previously cached results too");
+  process.env.MAXMIND_ENABLED = "true";
   geoStatus = 429;
   const fallbackId = randomUUID();
   assert.equal((await post(payload({ id: fallbackId }), { "x-forwarded-for": "192.0.2.26" })).status, 204);
@@ -176,7 +208,8 @@ try {
 
   // test:analytics builds this real Astro/Vercel entrypoint. Exercise the rendered
   // page too: helper tests alone cannot catch lost headers on Astro redirects.
-  delete process.env.MAXMIND_ACCOUNT_ID; delete process.env.MAXMIND_LICENSE_KEY;
+  // Keep test credentials configured; exercise explicit re-enablement first,
+  // then the default-off production behavior on the same historical records.
   const { default: handler } = await import(pathToFileURL(join(process.cwd(), ".vercel/output/functions/_render.func/dist/server/entry.mjs")));
   renderedServer = createServer(async (req, res) => {
     req.headers.host = "www.jaredsystems.com";
@@ -228,6 +261,31 @@ try {
     assert.ok(comparisonHtml.includes("Vercel estimate") && comparisonHtml.includes("MaxMind GeoLite estimate"));
     if (!comparison.postal) assert.ok(comparisonHtml.includes("Estimated ZIP: Unknown"), "Do not borrow the other provider's ZIP");
   }
+  delete process.env.MAXMIND_ENABLED;
+  for (const recordedVisit of [disabledVisit, conflictingVisit]) {
+    html = await (await realFetch(`${renderedUrl}?session=${recordedVisit.session}`, { headers: { cookie: cookies } })).text();
+    const areaCell = html.match(/<td\b[^>]*>[\s\S]*?<\/td>/g)?.find(cell => cell.includes("Approximate area"));
+    assert.ok(areaCell?.includes("The Hammocks / West Kendall"));
+    assert.ok(areaCell.includes("Miami, FL, US") && areaCell.includes("Estimated ZIP: 33196"), "Keep the original Vercel city and ZIP");
+    assert.ok(areaCell.includes("Inferred from ZIP 33196; neighborhood not confirmed."));
+    assert.ok(!html.includes("Pompano Beach") && !html.includes("33064") && !html.includes("MaxMind GeoLite estimate") && !html.includes("Providers disagree:"), "Disabled estimates must disappear from both new and historical visits");
+    assert.ok(html.includes("MaxMind lookups and estimates are disabled."));
+  }
+  for (const query of ["hammocks", "west kendall", "33196", "miami"]) {
+    html = await (await realFetch(`${renderedUrl}?session=${conflictingVisit.session}&q=${encodeURIComponent(query)}`, { headers: { cookie: cookies } })).text();
+    assert.ok(html.includes("1 matching events"), "Area, city, and ZIP searches must match the visible Vercel estimate");
+  }
+  for (const query of ["Pompano Beach", "33064"]) {
+    html = await (await realFetch(`${renderedUrl}?session=${conflictingVisit.session}&q=${encodeURIComponent(query)}`, { headers: { cookie: cookies } })).text();
+    assert.ok(html.includes("No matching activity"), "Hidden GeoLite values must not produce misleading search results");
+  }
+  const missingVercelSession = randomUUID();
+  await api.saveEvent({ ...conflictingEvent, id: randomUUID(), session: missingVercelSession, vercelLocation: undefined });
+  html = await (await realFetch(`${renderedUrl}?session=${missingVercelSession}`, { headers: { cookie: cookies } })).text();
+  assert.ok(html.includes("Estimated ZIP: Unknown") && !html.includes("Approximate area</small>"));
+  assert.ok(!html.includes("Pompano Beach"), "Do not use an old GeoLite estimate when the Vercel copy is absent");
+  assert.equal((await api.readEvents(0, Date.now() + 1000)).find(e => e.id === conflictingVisit.id).location.postal, "33064", "Historical raw estimates remain unchanged");
+  console.log("PASS: ZIP area labels, Vercel-only history, disabled GeoLite display/search, and missing estimates");
   response = await realFetch(`${renderedUrl}?session=${visit.session}`, { headers: { cookie: cookies } });
   html = await response.text();
   assert.ok(html.includes("Session timeline"));

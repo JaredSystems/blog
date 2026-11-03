@@ -1,15 +1,16 @@
 ---
 import type { TrafficEvent, LocationEstimate } from "../lib/traffic";
+import { approximateArea, visibleLocations } from "../lib/traffic-location";
 
-interface Props { event: Pick<TrafficEvent, "location" | "vercelLocation" | "geoStatus"> }
-const { event } = Astro.props;
+interface Props { event: Pick<TrafficEvent, "location" | "vercelLocation" | "geoStatus">; includeGeoLite?: boolean }
+const { event, includeGeoLite = false } = Astro.props;
 // Preserve each provider's complete estimate, including records already stored
 // with GeoLite in `location`. Display order is not a confidence ranking.
-const estimates = event.vercelLocation ? [event.vercelLocation, event.location] : [event.location];
+const estimates = visibleLocations(event, includeGeoLite);
 const fields = ["country", "region", "city", "postal"] as const;
 const labels = { country: "country", region: "region", city: "city", postal: "ZIP" };
 const normalized = (value: string) => value.trim().toLowerCase();
-const conflicts = event.vercelLocation ? fields.filter(field => {
+const conflicts = includeGeoLite && event.vercelLocation ? fields.filter(field => {
   const vercel = normalized(event.vercelLocation![field]);
   const geolite = normalized(event.location[field]);
   return vercel && geolite && vercel !== geolite;
@@ -18,13 +19,16 @@ const place = (geo: LocationEstimate) => [geo.city, geo.region, geo.country].fil
 ---
 <div class="location-estimates">
   {conflicts.length > 0 && <p class="conflict">Providers disagree: {conflicts.join(", ")}. Location uncertain.</p>}
-  {estimates.map(estimate => <div class="estimate">
+  {estimates.map(estimate => {
+    const area = approximateArea(estimate);
+    return <div class="estimate">
+    {area && <div class="area"><small>Approximate area</small><strong>{area}</strong><small>Inferred from ZIP {estimate.postal}; neighborhood not confirmed.</small></div>}
     <small class="provider">{estimate.provider} estimate</small>
     <strong>{place(estimate)}</strong>
     <small>Estimated ZIP: {estimate.postal || "Unknown"}</small>
     <small>{estimate.accuracyKm === null ? "Accuracy radius unavailable" : `Estimated radius: ${estimate.accuracyKm} km`}</small>
-  </div>)}
-  {event.geoStatus === "fallback" && <small>GeoLite unavailable; using Vercel</small>}
+  </div>})}
+  {includeGeoLite && event.geoStatus === "fallback" && <small>GeoLite unavailable; using Vercel</small>}
 </div>
 <style>
   .estimate + .estimate { border-top: 1px solid #e7ecee; margin-top: 10px; padding-top: 10px; }
@@ -32,5 +36,7 @@ const place = (geo: LocationEstimate) => [geo.city, geo.region, geo.country].fil
   strong { font-weight: 600; }
   small { margin-top: 4px; }
   .provider { color: #596771; margin: 0 0 4px; }
+  .area { margin-bottom: 10px; }
+  .area > small { color: #596771; }
   .conflict { color: #74500a; background: #fff6df; border-radius: 5px; padding: 6px 8px; margin: 0 0 10px; font-size: 11px; }
 </style>

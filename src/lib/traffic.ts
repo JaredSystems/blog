@@ -23,6 +23,10 @@ export type TrafficEvent = {
   legacy?: boolean;
 };
 
+export function geoLiteEnabled(): boolean {
+  return process.env.MAXMIND_ENABLED === "true" && Boolean(process.env.MAXMIND_ACCOUNT_ID && process.env.MAXMIND_LICENSE_KEY);
+}
+
 export function clean(value: unknown, length = 160): string {
   return typeof value === "string" ? value.replace(/[\u0000-\u001f\u007f]/g, "").trim().slice(0, length) : "";
 }

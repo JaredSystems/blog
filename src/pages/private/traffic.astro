@@ -1,6 +1,7 @@
 ---
-import { ADMIN_COOKIE, MAX_EVENTS, RETENTION_DAYS, adminToken, authorized, clean, productionRequest, readSmallBody, sameOrigin, validSecret, type TrafficEvent } from "../../lib/traffic";
+import { ADMIN_COOKIE, MAX_EVENTS, RETENTION_DAYS, adminToken, authorized, clean, geoLiteEnabled, productionRequest, readSmallBody, sameOrigin, validSecret, type TrafficEvent } from "../../lib/traffic";
 import { readEvents, readHealth, readLegacy } from "../../lib/traffic-store";
+import { approximateArea, visibleLocations } from "../../lib/traffic-location";
 import TrafficLocation from "../../components/TrafficLocation.astro";
 
 export const prerender = false;
@@ -63,9 +64,12 @@ if (signedIn) {
   }
 }
 const needle = q.toLowerCase();
+const geolite = geoLiteEnabled();
 events = events.filter(e => (!kind || e.type === kind) && (!session || e.session === session) &&
   (!archive || (e.timestamp >= `${from}T00:00:00.000Z` && e.timestamp <= `${to}T23:59:59.999Z`)) &&
-  (!needle || [e.path, e.title, e.source, e.medium, e.campaign, e.target, e.location.city, e.location.region, e.location.country, e.location.postal, e.vercelLocation?.city, e.vercelLocation?.postal].join(" ").toLowerCase().includes(needle)))
+  (!needle || [e.path, e.title, e.source, e.medium, e.campaign, e.target,
+    ...visibleLocations(e, geolite).flatMap(location => [location.city, location.region, location.country, location.postal, approximateArea(location)]),
+  ].join(" ").toLowerCase().includes(needle)))
   .sort((a, b) => session ? a.timestamp.localeCompare(b.timestamp) : b.timestamp.localeCompare(a.timestamp));
 const pages = Math.max(1, Math.ceil(events.length / 50));
 const page = Math.min(pages, Math.max(1, Number.parseInt(params.get("page") || "1", 10) || 1));
@@ -80,7 +84,6 @@ const href = (changes: Record<string, string>) => {
   return `/private/traffic?${next}`;
 };
 const formatTime = (value: string) => new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "medium", timeZone: "America/New_York" }).format(new Date(value));
-const geolite = Boolean(process.env.MAXMIND_ACCOUNT_ID && process.env.MAXMIND_LICENSE_KEY);
 ---
 <!doctype html>
 <html lang="en">
@@ -114,7 +117,7 @@ const geolite = Boolean(process.env.MAXMIND_ACCOUNT_ID && process.env.MAXMIND_LI
             <label>From (UTC)<input type="date" name="from" value={from} required /></label>
             <label>Through (UTC)<input type="date" name="to" value={to} required /></label>
             <label>Activity<select name="type"><option value="">All activity</option><option value="pageview" selected={kind === "pageview"}>Page views</option><option value="outbound" selected={kind === "outbound"}>Outbound clicks</option></select></label>
-            <label class="search">Search<input type="search" name="q" value={q} placeholder="City, ZIP, source, page, or destination" /></label>
+            <label class="search">Search<input type="search" name="q" value={q} placeholder="Area, city, ZIP, source, page, or destination" /></label>
             <button>Apply</button><a class="reset" href="/private/traffic">Reset</a>
           </form>
         </section>
@@ -135,7 +138,7 @@ const geolite = Boolean(process.env.MAXMIND_ACCOUNT_ID && process.env.MAXMIND_LI
                 <td><time datetime={event.timestamp}>{formatTime(event.timestamp)}</time><span class:list={{ badge: true, outbound: event.type === "outbound" }}>{event.type === "outbound" ? "Outbound click" : "Page view"}</span></td>
                 <td><strong>{event.path}</strong><small>{event.title}</small>{event.target && <span class="destination">↗ {event.target}</span>}</td>
                 <td><strong>{event.source || "Unknown"}</strong><small>{event.medium || "Unknown medium"}</small>{event.campaign && <small>Campaign: {event.campaign}</small>}{event.referrer && <small class="referrer">Entry referrer: {event.referrer}</small>}</td>
-                <td><TrafficLocation event={event} /></td>
+                <td><TrafficLocation event={event} includeGeoLite={geolite} /></td>
                 <td><strong>{event.browser} / {event.os}</strong><small>{event.device}</small>{event.session ? <a class="session" href={href({ session: event.session, q: "", type: "", page: "", from: new Date(Date.now() - RETENTION_DAYS * 86400000).toISOString().slice(0, 10), to: today })}>View session {event.session.slice(0, 8)} →</a> : <small>No session recorded</small>}</td>
               </tr>)}</tbody>
             </table> : <div class="empty"><h3>No matching activity</h3><p>Try a wider date range or clear the filters. New tracking starts when this version is deployed.</p></div>}
@@ -146,8 +149,9 @@ const geolite = Boolean(process.env.MAXMIND_ACCOUNT_ID && process.env.MAXMIND_LI
           <h2>Collection status</h2>
           <p><strong>{health ? "Storage connected" : "Storage unavailable"}</strong> · {health?.count.toLocaleString() || "0"} current events retained. Last stored event: {health?.lastWrite ? formatTime(health.lastWrite) : "None yet"}.</p>
           <p>Current history keeps up to {RETENTION_DAYS} days and {MAX_EVENTS.toLocaleString()} events, whichever limit is reached first. {Number(health?.capacityRemoved || 0).toLocaleString()} events have been removed by the capacity limit.</p>
-          <p>{geolite ? "Vercel city/ZIP estimates with a free MaxMind GeoLite comparison. GeoLite lookups are cached for 24 hours and capped at 900 per UTC day." : "Using Vercel city/ZIP estimates. Free MaxMind GeoLite can be enabled with an account ID and license key."}</p>
-          <p>Vercel is shown first; both providers’ results stay visible when available. Neither is automatically more accurate. Conflicting fields are flagged, and missing fields remain unknown.</p>
+          <p>{geolite ? "Vercel city/ZIP estimates with a free MaxMind GeoLite comparison. GeoLite lookups are cached for 24 hours and capped at 900 per UTC day." : "Using Vercel city/ZIP estimates. MaxMind lookups and estimates are disabled."}</p>
+          {geolite && <p>Vercel is shown first; both providers’ results stay visible when available. Neither is automatically more accurate. Conflicting fields are flagged, and missing fields remain unknown.</p>}
+          <p>Approximate area labels are inferred from selected ZIP codes and do not confirm a visitor’s neighborhood. Current coverage: 33196 — The Hammocks / West Kendall. Other ZIP codes keep the provider’s location details.</p>
           <p>Locations and postal codes are estimates. A more specific city name does not prove greater accuracy. No raw IP addresses, precise coordinates, or full user-agent strings are stored in visit records.</p>
           <p>Production only. Do Not Track and Global Privacy Control are respected. Signing in excludes this browser from custom tracking for one year, including after sign-out. Google Analytics is separate.</p>
           <p>Sessions expire after 30 minutes of inactivity and are scoped to a browser tab. The source is the session’s entry referrer or UTM campaign; it is not Google Analytics’ first-user attribution. Blocked scripts, failed delivery, and bots mean this is not a complete count of people.</p>
