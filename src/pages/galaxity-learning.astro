@@ -1,6 +1,7 @@
 ---
 import "../styles/global.css";
 import GoogleAnalytics from "../components/GoogleAnalytics.astro";
+import PrivateTraffic from "../components/PrivateTraffic.astro";
 
 export const prerender = true;
 
@@ -49,6 +50,7 @@ const screenshots = [
     <meta name="generator" content={Astro.generator} />
     <title>Galaxity Learning | jaredsystems</title>
     <GoogleAnalytics />
+    <PrivateTraffic />
   </head>
   <body>
     <div class="img-wrapper">

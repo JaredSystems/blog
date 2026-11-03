@@ -38,7 +38,7 @@ for (const [name, vercelEnvironment, id, expected] of [
   ["production", "production", measurementId, true],
 ]) {
   const build = spawnSync("npm", ["run", "build"], {
-    env: { ...process.env, VERCEL_ENV: vercelEnvironment, PUBLIC_GA_MEASUREMENT_ID: id },
+    env: { ...process.env, VERCEL_ENV: vercelEnvironment, PUBLIC_GA_MEASUREMENT_ID: id, TRAFFIC_ENABLED: "true" },
     encoding: "utf8",
   });
   assert.equal(build.status, 0, `${name} build failed:\n${build.stdout}\n${build.stderr}`);
@@ -47,6 +47,7 @@ for (const [name, vercelEnvironment, id, expected] of [
   for (const file of files) {
     const html = await readFile(file, "utf8");
     assert.ok(!html.includes("/api/analytics/"), `${file} retains the old tracker`);
+    assert.equal(html.includes("data-private-traffic"), vercelEnvironment === "production", `${name}: custom tracker production gate`);
     const scripts = [...html.matchAll(marker)];
     assert.equal(scripts.length, expected ? 1 : 0, `${name}: ${file}`);
     if (!expected) {
@@ -85,7 +86,7 @@ for (const [name, vercelEnvironment, id, expected] of [
 // must not enable tracking. Use a real dev server to check Astro's DEV gate.
 const port = 14327;
 const server = spawn(process.execPath, ["node_modules/astro/astro.js", "dev", "--host", "127.0.0.1", "--port", String(port)], {
-  env: { ...process.env, VERCEL_ENV: "production", PUBLIC_GA_MEASUREMENT_ID: measurementId },
+  env: { ...process.env, VERCEL_ENV: "production", PUBLIC_GA_MEASUREMENT_ID: measurementId, TRAFFIC_ENABLED: "true" },
   stdio: "ignore",
 });
 try {
@@ -98,6 +99,7 @@ try {
       const html = await response.text();
       assert.equal(response.status, 200);
       assert.ok(!html.includes("data-google-analytics"));
+      assert.ok(!html.includes("data-private-traffic"));
       assert.ok(!html.includes("googletagmanager.com"));
       assert.ok(!html.includes(measurementId));
       ready = true;
@@ -114,6 +116,8 @@ try {
     });
     assert.equal(response.status, 404, `${path} should be removed`);
   }
+  const collector = await fetch(`${origin}/api/traffic`, { method: "POST", headers: { origin: "https://www.jaredsystems.com", "content-type": "application/json" }, body: "{}" });
+  assert.equal(collector.status, 404, "Development cannot collect even with production variables");
   console.log("PASS: development with production variables sends no analytics; retired routes return 404");
 } finally {
   server.kill("SIGTERM");

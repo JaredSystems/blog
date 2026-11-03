@@ -1,6 +1,7 @@
 ---
 import "../styles/global.css";
 import GoogleAnalytics from "../components/GoogleAnalytics.astro";
+import PrivateTraffic from "../components/PrivateTraffic.astro";
 import ResourceContent from "../content/papers.md";
 
 export const prerender = true;
@@ -16,6 +17,7 @@ export const prerender = true;
 		<meta name="generator" content={Astro.generator} />
 		<title>jaredsystems</title>
 		<GoogleAnalytics />
+    <PrivateTraffic />
 	</head>
   <body>
 		<div class="img-wrapper">

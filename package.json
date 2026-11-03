@@ -7,6 +7,7 @@
     "build": "astro build",
     "typecheck": "astro check",
     "test:analytics": "node scripts/test-analytics.mjs",
+    "test:traffic": "node scripts/test-traffic.mjs",
     "preview": "astro preview",
     "astro": "astro"
   },

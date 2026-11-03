@@ -1,6 +1,7 @@
 ---
 import "../../styles/global.css";
 import GoogleAnalytics from "../../components/GoogleAnalytics.astro";
+import PrivateTraffic from "../../components/PrivateTraffic.astro";
 
 import { getCollection } from "astro:content";
 
@@ -35,6 +36,7 @@ const formatDateUTC = (d: string | Date) => fmtUTC.format(getDate(d));
 		<meta name="generator" content={Astro.generator} />
     <title>{post.data.title}</title>	
     <GoogleAnalytics />
+    <PrivateTraffic />
   </head>
  
   <body>

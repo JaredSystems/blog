@@ -1,6 +1,7 @@
 ---
 import "../styles/global.css";
 import GoogleAnalytics from "../components/GoogleAnalytics.astro";
+import PrivateTraffic from "../components/PrivateTraffic.astro";
 import IndexContent from "../content/index.md"
 import { getCollection } from "astro:content";
 
@@ -25,6 +26,7 @@ const dateFormatter = new Intl.DateTimeFormat("en-US", {
 		<meta name="generator" content={Astro.generator} />
 		<title>jaredsystems</title>
 		<GoogleAnalytics />
+    <PrivateTraffic />
 	</head>
   <body class="home-page">
 	<div class="img-wrapper">

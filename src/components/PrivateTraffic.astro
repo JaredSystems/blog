@@ -1,0 +1,4 @@
+---
+const enabled = import.meta.env.PROD && process.env.VERCEL_ENV === "production" && process.env.TRAFFIC_ENABLED === "true";
+---
+{enabled && <script is:inline defer src="/traffic.js" data-private-traffic></script>}

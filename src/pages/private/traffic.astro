@@ -1,0 +1,190 @@
+---
+import { ADMIN_COOKIE, MAX_EVENTS, RETENTION_DAYS, adminToken, authorized, clean, productionRequest, readSmallBody, sameOrigin, validSecret, type TrafficEvent, type LocationEstimate } from "../../lib/traffic";
+import { readEvents, readHealth, readLegacy } from "../../lib/traffic-store";
+
+export const prerender = false;
+if (!productionRequest(Astro.request, import.meta.env.PROD)) return new Response("Not found", { status: 404 });
+Astro.response.headers.set("Cache-Control", "private, no-store");
+Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
+// Suppress cross-origin referrers while preserving Origin on same-site form
+// submissions. no-referrer makes browsers send Origin: null and breaks CSRF checks.
+Astro.response.headers.set("Referrer-Policy", "same-origin");
+Astro.response.headers.set("Content-Security-Policy", "default-src 'self'; script-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; frame-ancestors 'none'; base-uri 'none'; form-action 'self'");
+const cookieOptions = { path: "/", secure: true, sameSite: "strict" as const, httpOnly: true, maxAge: 86400 };
+const redirectToDashboard = () => {
+  const headers = new Headers(Astro.response.headers);
+  headers.set("Location", "/private/traffic");
+  return new Response(null, { status: 303, headers });
+};
+const login = () => {
+  Astro.cookies.set(ADMIN_COOKIE, adminToken(), cookieOptions);
+  Astro.cookies.set("traffic_ignore", "1", { ...cookieOptions, httpOnly: false, maxAge: 31536000 });
+};
+let loginError = "";
+if (Astro.url.searchParams.has("key")) {
+  if (validSecret(Astro.url.searchParams.get("key") || "")) login();
+  return redirectToDashboard(); // Exchange the old bookmark key for a private cookie.
+}
+if (Astro.request.method === "POST") {
+  if (!sameOrigin(Astro.request)) return new Response("Forbidden", { status: 403 });
+  let form: URLSearchParams;
+  try { form = new URLSearchParams(await readSmallBody(Astro.request)); }
+  catch { return new Response("Invalid request", { status: 400 }); }
+  if (form.get("action") === "logout") {
+    // __Host- cookies require Secure even on the expired deletion cookie.
+    Astro.cookies.delete(ADMIN_COOKIE, { path: "/", secure: true, httpOnly: true, sameSite: "strict" });
+    return redirectToDashboard();
+  }
+  if (validSecret(form.get("key") || "")) { login(); return redirectToDashboard(); }
+  loginError = "That access key was not recognized.";
+  Astro.response.status = 401;
+}
+const signedIn = authorized(Astro.request);
+const params = Astro.url.searchParams;
+const today = new Date().toISOString().slice(0, 10);
+const defaultFrom = new Date(Date.now() - 6 * 86400000).toISOString().slice(0, 10);
+const validDate = (s: string | null, fallback: string) => s && /^\d{4}-\d{2}-\d{2}$/.test(s) && Number.isFinite(Date.parse(s)) ? s : fallback;
+const from = validDate(params.get("from"), defaultFrom);
+const to = validDate(params.get("to"), today);
+const q = clean(params.get("q"), 160);
+const kind = ["pageview", "outbound"].includes(params.get("type") || "") ? params.get("type")! : "";
+const session = clean(params.get("session"), 36);
+const archive = params.get("history") === "archive";
+let error = "";
+let health: Awaited<ReturnType<typeof readHealth>> | null = null;
+let events: TrafficEvent[] = [];
+if (signedIn) {
+  try {
+    [health, events] = await Promise.all([readHealth(), archive ? readLegacy() : readEvents(Date.parse(`${from}T00:00:00Z`), Date.parse(`${to}T23:59:59.999Z`))]);
+  } catch {
+    error = "Traffic storage is unavailable. No counts can be shown reliably. Please check the Vercel function logs and storage connection.";
+    Astro.response.status = 503;
+  }
+}
+const needle = q.toLowerCase();
+events = events.filter(e => (!kind || e.type === kind) && (!session || e.session === session) &&
+  (!archive || (e.timestamp >= `${from}T00:00:00.000Z` && e.timestamp <= `${to}T23:59:59.999Z`)) &&
+  (!needle || [e.path, e.title, e.source, e.medium, e.campaign, e.target, e.location.city, e.location.region, e.location.country, e.location.postal, e.vercelLocation?.city, e.vercelLocation?.postal].join(" ").toLowerCase().includes(needle)))
+  .sort((a, b) => session ? a.timestamp.localeCompare(b.timestamp) : b.timestamp.localeCompare(a.timestamp));
+const pages = Math.max(1, Math.ceil(events.length / 50));
+const page = Math.min(pages, Math.max(1, Number.parseInt(params.get("page") || "1", 10) || 1));
+const shown = events.slice((page - 1) * 50, page * 50);
+const pageviews = events.filter(e => e.type === "pageview").length;
+const clicks = events.filter(e => e.type === "outbound").length;
+const marmot = events.filter(e => e.type === "outbound" && /^https?:\/\/(www\.)?marmotsystems\.com(?:\/|$)/i.test(e.target)).length;
+const sessionCount = new Set(events.map(e => e.session).filter(Boolean)).size;
+const href = (changes: Record<string, string>) => {
+  const next = new URLSearchParams({ from, to, q, type: kind, history: archive ? "archive" : "recent", session, ...changes });
+  for (const [key, value] of [...next.entries()]) if (!value) next.delete(key);
+  return `/private/traffic?${next}`;
+};
+const formatTime = (value: string) => new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "medium", timeZone: "America/New_York" }).format(new Date(value));
+const place = (geo: LocationEstimate) => [geo.city, geo.region, geo.country].filter(Boolean).join(", ") || "Unknown";
+const geolite = Boolean(process.env.MAXMIND_ACCOUNT_ID && process.env.MAXMIND_LICENSE_KEY);
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex,nofollow,noarchive" />
+    <title>Private traffic · Jared Systems</title>
+    <link rel="icon" href="data:," />
+  </head>
+  <body>
+    <main>
+      <header>
+        <div><p class="eyebrow">Jared Systems / Private</p><h1>Traffic</h1><p class="subtitle">Visits, sources, and the links people follow.</p></div>
+        {signedIn && <form method="post" action="/private/traffic"><input type="hidden" name="action" value="logout" /><button class="quiet">Sign out</button></form>}
+      </header>
+      {!signedIn ? <section class="login panel">
+        <h2>Open your private dashboard</h2>
+        <p>Use your existing traffic access key. Your original bookmarked link also works.</p>
+        <form method="post" action="/private/traffic">
+          <label>Access key<input type="password" name="key" required autocomplete="current-password" /></label>
+          <button>Sign in</button>
+        </form>
+        {loginError && <p role="alert" class="error">{loginError}</p>}
+      </section> : <>
+        <nav aria-label="Traffic history"><a class:list={{ active: !archive }} href={href({ history: "recent", page: "", session: "" })}>Current tracking</a><a class:list={{ active: archive }} href={href({ history: "archive", page: "", session: "" })}>Previous tracker archive</a></nav>
+        <section class="panel filters" aria-label="Filter traffic">
+          <form method="get" action="/private/traffic">
+            <input type="hidden" name="history" value={archive ? "archive" : "recent"} />
+            {session && <input type="hidden" name="session" value={session} />}
+            <label>From (UTC)<input type="date" name="from" value={from} required /></label>
+            <label>Through (UTC)<input type="date" name="to" value={to} required /></label>
+            <label>Activity<select name="type"><option value="">All activity</option><option value="pageview" selected={kind === "pageview"}>Page views</option><option value="outbound" selected={kind === "outbound"}>Outbound clicks</option></select></label>
+            <label class="search">Search<input type="search" name="q" value={q} placeholder="City, ZIP, source, page, or destination" /></label>
+            <button>Apply</button><a class="reset" href="/private/traffic">Reset</a>
+          </form>
+        </section>
+        {error ? <section role="alert" class="panel error"><h2>Storage needs attention</h2><p>{error}</p></section> : <>
+          <section class="metrics" aria-label="Matching activity">
+            <div class="panel"><span>Page views</span><strong>{pageviews.toLocaleString()}</strong></div>
+            <div class="panel"><span>Outbound clicks</span><strong>{clicks.toLocaleString()}</strong></div>
+            <div class="panel"><span>Marmot clicks</span><strong>{marmot.toLocaleString()}</strong></div>
+            <div class="panel"><span>Browser sessions</span><strong>{archive ? "—" : sessionCount.toLocaleString()}</strong></div>
+          </section>
+          <div class="results-heading"><div><h2>{session ? "Session timeline" : "Activity history"}</h2><p>{events.length.toLocaleString()} matching events · {session ? "Oldest first" : "Newest first"} · Times in New York</p></div><a class="quiet link-button" href={href({ page: String(page) })}>Refresh</a></div>
+          {session && <p class="notice">Session {session.slice(0, 8)} · <a href={href({ session: "", page: "" })}>Show all sessions</a>. A session groups activity in a browser tab, not a verified person.</p>}
+          {archive && <p class="notice">Read-only records from the previous tracker. ZIP codes and session links were never collected. This archive is separate from the new retention policy and may already have been truncated by the old tracker.</p>}
+          <section class="panel table-wrap" aria-label="Recorded events">
+            {shown.length ? <table>
+              <thead><tr><th>Time / activity</th><th>Page / destination</th><th>Session source</th><th>Estimated location</th><th>Browser / session</th></tr></thead>
+              <tbody>{shown.map(event => <tr>
+                <td><time datetime={event.timestamp}>{formatTime(event.timestamp)}</time><span class:list={{ badge: true, outbound: event.type === "outbound" }}>{event.type === "outbound" ? "Outbound click" : "Page view"}</span></td>
+                <td><strong>{event.path}</strong><small>{event.title}</small>{event.target && <span class="destination">↗ {event.target}</span>}</td>
+                <td><strong>{event.source || "Unknown"}</strong><small>{event.medium || "Unknown medium"}</small>{event.campaign && <small>Campaign: {event.campaign}</small>}{event.referrer && <small class="referrer">Entry referrer: {event.referrer}</small>}</td>
+                <td><strong>{place(event.location)}</strong><small>ZIP: {event.location.postal || "Unknown"}</small><small>{event.location.provider} · {event.location.accuracyKm === null ? "Accuracy radius unavailable" : `Estimated radius: ${event.location.accuracyKm} km`}</small>{event.geoStatus === "fallback" && <small>GeoLite unavailable; using Vercel</small>}{event.vercelLocation && <details><summary>Vercel comparison</summary><small>{place(event.vercelLocation)} · ZIP: {event.vercelLocation.postal || "Unknown"}</small></details>}</td>
+                <td><strong>{event.browser} / {event.os}</strong><small>{event.device}</small>{event.session ? <a class="session" href={href({ session: event.session, q: "", type: "", page: "", from: new Date(Date.now() - RETENTION_DAYS * 86400000).toISOString().slice(0, 10), to: today })}>View session {event.session.slice(0, 8)} →</a> : <small>No session recorded</small>}</td>
+              </tr>)}</tbody>
+            </table> : <div class="empty"><h3>No matching activity</h3><p>Try a wider date range or clear the filters. New tracking starts when this version is deployed.</p></div>}
+          </section>
+          <div class="pagination"><span>Page {page} of {pages} · 50 events per page</span><div>{page > 1 && <a class="quiet link-button" href={href({ page: String(page - 1) })}>← Previous</a>}{page < pages && <a class="quiet link-button" href={href({ page: String(page + 1) })}>Next →</a>}</div></div>
+        </>}
+        <section class="panel notes">
+          <h2>Collection status</h2>
+          <p><strong>{health ? "Storage connected" : "Storage unavailable"}</strong> · {health?.count.toLocaleString() || "0"} current events retained. Last stored event: {health?.lastWrite ? formatTime(health.lastWrite) : "None yet"}.</p>
+          <p>Current history keeps up to {RETENTION_DAYS} days and {MAX_EVENTS.toLocaleString()} events, whichever limit is reached first. {Number(health?.capacityRemoved || 0).toLocaleString()} events have been removed by the capacity limit.</p>
+          <p>{geolite ? "Free MaxMind GeoLite enabled, with Vercel fallback. Lookups are cached for 24 hours and capped at 900 per UTC day." : "Using Vercel city/ZIP estimates. Free MaxMind GeoLite can be enabled with an account ID and license key."}</p>
+          <p>Locations and postal codes are estimates. A more specific city name does not prove greater accuracy. No raw IP addresses, precise coordinates, or full user-agent strings are stored in visit records.</p>
+          <p>Production only. Do Not Track and Global Privacy Control are respected. Signing in excludes this browser from custom tracking for one year, including after sign-out. Google Analytics is separate.</p>
+          <p>Sessions expire after 30 minutes of inactivity and are scoped to a browser tab. The source is the session’s entry referrer or UTM campaign; it is not Google Analytics’ first-user attribution. Blocked scripts, failed delivery, and bots mean this is not a complete count of people.</p>
+          {geolite && <p>This product includes GeoLite data created by <a href="https://www.maxmind.com/">MaxMind</a>.</p>}
+        </section>
+      </>}
+    </main>
+  </body>
+</html>
+<style>
+  :global(*) { box-sizing: border-box; }
+  :global(body) { margin: 0; background: #f5f6f8; color: #18232c; font: 14px/1.55 system-ui, sans-serif; }
+  main { max-width: 1500px; padding: 36px 28px 60px; margin: auto; }
+  header, .results-heading, .pagination { display: flex; justify-content: space-between; gap: 20px; align-items: center; }
+  header { margin-bottom: 30px; }
+  .eyebrow { color: #48666c; font-size: 12px; font-weight: 650; letter-spacing: .1em; text-transform: uppercase; }
+  h1 { font-size: 38px; letter-spacing: -.04em; margin: 3px 0; line-height: 1.15; }
+  h2 { font-size: 18px; margin: 0 0 8px; } h3 { margin: 0 0 8px; }
+  p { margin: 6px 0 12px; } .subtitle, small, .results-heading p, .pagination { color: #596771; }
+  a { color: #07665e; text-underline-offset: 3px; } nav { display: flex; gap: 22px; margin: 18px 0; border-bottom: 1px solid #dce2e5; }
+  nav a { text-decoration: none; padding: 8px 0 12px; color: #596771; } nav .active { color: #075e58; border-bottom: 3px solid #16796d; font-weight: 650; }
+  .panel { background: white; border: 1px solid #dce2e5; border-radius: 12px; }
+  .filters { padding: 20px; } .filters form { display: flex; gap: 14px; align-items: flex-end; flex-wrap: wrap; }
+  label { display: flex; gap: 6px; flex-direction: column; font-size: 12px; font-weight: 650; }
+  input, select, button { font: inherit; font-size: 14px; border-radius: 7px; padding: 10px 12px; }
+  input, select { color: #18232c; border: 1px solid #bfcbd0; background: white; min-height: 42px; }
+  input:focus, select:focus, button:focus-visible, a:focus-visible { outline: 3px solid #85c8bf; outline-offset: 2px; }
+  .search { flex: 1; min-width: 240px; } button, .link-button { background: #126e63; color: white; border: 1px solid #126e63; cursor: pointer; font-weight: 650; }
+  .quiet { background: white; border: 1px solid #bfcbd0; color: #28464a; } .link-button { text-decoration: none; border-radius: 7px; padding: 8px 12px; display: inline-block; }
+  .reset { padding: 10px 0; } .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin: 20px 0 30px; }
+  .metrics .panel { padding: 18px 22px; } .metrics span { color: #596771; font-size: 12px; } .metrics strong { display: block; font-size: 30px; font-weight: 600; margin-top: 4px; }
+  .results-heading { margin-bottom: 12px; } .results-heading p { font-size: 12px; margin: 0; } .table-wrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; text-align: left; } th { background: #f9fafb; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: #596771; white-space: nowrap; }
+  th, td { padding: 16px; border-bottom: 1px solid #e7ecee; vertical-align: top; } tr:last-child td { border-bottom: 0; } td { font-size: 12px; min-width: 180px; max-width: 330px; overflow-wrap: anywhere; }
+  td strong { font-weight: 600; } td small, .destination { display: block; margin-top: 4px; } time { white-space: nowrap; } .badge { display: table; padding: 3px 8px; border-radius: 5px; color: #285c63; background: #eaf3f4; margin-top: 8px; font-size: 10px; font-weight: 650; }
+  .outbound { background: #e9f4e9; color: #426a35; } .destination { color: #07665e; } .session { display: inline-block; margin-top: 8px; } summary { color: #07665e; cursor: pointer; margin-top: 6px; }
+  .pagination { margin: 18px 0 30px; font-size: 12px; } .pagination div { display: flex; gap: 10px; } .notes { padding: 22px; color: #596771; font-size: 12px; } .notes h2 { color: #18232c; }
+  .notice { padding: 14px 18px; background: #fff6df; border-radius: 8px; font-size: 12px; } .empty { text-align: center; padding: 60px 25px; color: #596771; }
+  .login { max-width: 460px; margin: 70px auto; padding: 30px; } .login form { display: grid; gap: 18px; margin-top: 24px; } .error { color: #982c30; padding: 20px; margin: 20px 0; }
+  @media (max-width: 700px) { main { padding: 24px 16px; } .metrics { grid-template-columns: repeat(2, 1fr); gap: 10px; } .metrics .panel { padding: 14px; } .filters label { flex: 1; } .pagination { align-items: flex-start; } h1 { font-size: 32px; } }
+</style>
