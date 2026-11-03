@@ -21,6 +21,7 @@ const origin = "https://www.jaredsystems.com";
 let redisRequests = 0;
 let storageFailure = false;
 let geoCalls = 0;
+const geoUrls = [];
 let geoResult = { city: { names: { en: "The Hammocks" } }, country: { iso_code: "US" }, subdivisions: [{ iso_code: "FL" }], postal: { code: "33196" }, location: { accuracy_radius: 20 } };
 let geoStatus = 200;
 
@@ -49,6 +50,7 @@ try {
   globalThis.fetch = async (url, options) => {
     if (String(url).startsWith("https://geolite.info/")) {
       geoCalls++;
+      geoUrls.push(String(url));
       assert.equal(options.headers.authorization, `Basic ${Buffer.from("test-account:test-license").toString("base64")}`);
       return new Response(JSON.stringify(geoResult), { status: geoStatus });
     }
@@ -137,6 +139,16 @@ try {
   assert.equal(enriched.location.city, "The Hammocks");
   assert.equal(enriched.location.accuracyKm, 20);
   assert.equal(enriched.vercelLocation.city, "Miami");
+  // Reproduce the reported visit through the real collector, then render that
+  // same saved event below. Neither provider is known to be correct from IP alone.
+  geoResult = { city: { names: { en: "Pompano Beach" } }, country: { iso_code: "US" }, subdivisions: [{ iso_code: "FL" }], postal: { code: "33064" }, location: { accuracy_radius: 50 } };
+  const conflictingVisit = payload();
+  assert.equal((await post(conflictingVisit, { "x-forwarded-for": "192.0.2.29", "x-vercel-ip-postal-code": "33196" })).status, 204);
+  assert.equal(geoUrls.at(-1), "https://geolite.info/geoip/v2.1/city/192.0.2.29", "Lookup must use this visitor's IP, not the server or previous visitor");
+  const conflictingEvent = (await api.readEvents(0, Date.now() + 1000)).find(e => e.id === conflictingVisit.id);
+  assert.equal(conflictingEvent.location.city, "Pompano Beach");
+  assert.equal(conflictingEvent.location.postal, "33064");
+  assert.equal(conflictingEvent.vercelLocation.postal, "33196");
   geoStatus = 429;
   const fallbackId = randomUUID();
   assert.equal((await post(payload({ id: fallbackId }), { "x-forwarded-for": "192.0.2.26" })).status, 204);
@@ -196,9 +208,30 @@ try {
   assert.ok(!html.includes("Last stored event: None yet"));
   assert.ok(html.includes("&lt;script&gt;alert(1)&lt;/script&gt;"));
   assert.ok(!html.includes("<script>alert(1)</script>"));
+  response = await realFetch(`${renderedUrl}?session=${conflictingVisit.session}`, { headers: { cookie: cookies } });
+  html = await response.text();
+  const locationCell = html.match(/<td\b[^>]*>[\s\S]*?<\/td>/g)?.find(cell => cell.includes("Pompano Beach"));
+  assert.ok(locationCell?.includes("33196") && locationCell.includes("33064"), "Both provider ZIP estimates must remain visible on the same visit");
+  assert.ok(!locationCell.includes("<details"), "The potentially correct Vercel estimate must not be hidden behind a disclosure");
+  assert.match(locationCell, /Providers disagree: city, ZIP/, "Conflicting provider estimates must be flagged instead of implying MaxMind is more accurate");
+  assert.ok(locationCell.indexOf("Miami") < locationCell.indexOf("Pompano Beach"), "Show the built-in Vercel estimate before the optional GeoLite comparison");
+  assert.ok(locationCell.includes("50 km"), "Keep MaxMind's reported uncertainty visible");
+  console.log("PASS: reported Miami 33196 / Pompano Beach 33064 conflict is visible and flagged on the saved visit");
+  for (const comparison of [
+    { ...conflictingEvent.vercelLocation, city: "miami", provider: "MaxMind GeoLite", accuracyKm: 50 },
+    { ...conflictingEvent.vercelLocation, postal: "", provider: "MaxMind GeoLite", accuracyKm: null },
+  ]) {
+    const session = randomUUID();
+    await api.saveEvent({ ...conflictingEvent, id: randomUUID(), session, location: comparison });
+    const comparisonHtml = await (await realFetch(`${renderedUrl}?session=${session}`, { headers: { cookie: cookies } })).text();
+    assert.ok(!comparisonHtml.includes("Providers disagree:"), "Case differences and missing fields must not be reported as disagreements");
+    assert.ok(comparisonHtml.includes("Vercel estimate") && comparisonHtml.includes("MaxMind GeoLite estimate"));
+    if (!comparison.postal) assert.ok(comparisonHtml.includes("Estimated ZIP: Unknown"), "Do not borrow the other provider's ZIP");
+  }
   response = await realFetch(`${renderedUrl}?session=${visit.session}`, { headers: { cookie: cookies } });
   html = await response.text();
   assert.ok(html.includes("Session timeline"));
+  assert.ok(html.includes("Vercel estimate") && !html.includes("MaxMind GeoLite estimate"), "Vercel-only records must not invent a comparison");
   response = await realFetch(`${renderedUrl}?q=does-not-exist-anywhere`, { headers: { cookie: cookies } });
   assert.ok((await response.text()).includes("No matching activity"));
   storageFailure = true;

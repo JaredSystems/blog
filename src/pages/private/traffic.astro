@@ -1,6 +1,7 @@
 ---
-import { ADMIN_COOKIE, MAX_EVENTS, RETENTION_DAYS, adminToken, authorized, clean, productionRequest, readSmallBody, sameOrigin, validSecret, type TrafficEvent, type LocationEstimate } from "../../lib/traffic";
+import { ADMIN_COOKIE, MAX_EVENTS, RETENTION_DAYS, adminToken, authorized, clean, productionRequest, readSmallBody, sameOrigin, validSecret, type TrafficEvent } from "../../lib/traffic";
 import { readEvents, readHealth, readLegacy } from "../../lib/traffic-store";
+import TrafficLocation from "../../components/TrafficLocation.astro";
 
 export const prerender = false;
 if (!productionRequest(Astro.request, import.meta.env.PROD)) return new Response("Not found", { status: 404 });
@@ -79,7 +80,6 @@ const href = (changes: Record<string, string>) => {
   return `/private/traffic?${next}`;
 };
 const formatTime = (value: string) => new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "medium", timeZone: "America/New_York" }).format(new Date(value));
-const place = (geo: LocationEstimate) => [geo.city, geo.region, geo.country].filter(Boolean).join(", ") || "Unknown";
 const geolite = Boolean(process.env.MAXMIND_ACCOUNT_ID && process.env.MAXMIND_LICENSE_KEY);
 ---
 <!doctype html>
@@ -135,7 +135,7 @@ const geolite = Boolean(process.env.MAXMIND_ACCOUNT_ID && process.env.MAXMIND_LI
                 <td><time datetime={event.timestamp}>{formatTime(event.timestamp)}</time><span class:list={{ badge: true, outbound: event.type === "outbound" }}>{event.type === "outbound" ? "Outbound click" : "Page view"}</span></td>
                 <td><strong>{event.path}</strong><small>{event.title}</small>{event.target && <span class="destination">↗ {event.target}</span>}</td>
                 <td><strong>{event.source || "Unknown"}</strong><small>{event.medium || "Unknown medium"}</small>{event.campaign && <small>Campaign: {event.campaign}</small>}{event.referrer && <small class="referrer">Entry referrer: {event.referrer}</small>}</td>
-                <td><strong>{place(event.location)}</strong><small>ZIP: {event.location.postal || "Unknown"}</small><small>{event.location.provider} · {event.location.accuracyKm === null ? "Accuracy radius unavailable" : `Estimated radius: ${event.location.accuracyKm} km`}</small>{event.geoStatus === "fallback" && <small>GeoLite unavailable; using Vercel</small>}{event.vercelLocation && <details><summary>Vercel comparison</summary><small>{place(event.vercelLocation)} · ZIP: {event.vercelLocation.postal || "Unknown"}</small></details>}</td>
+                <td><TrafficLocation event={event} /></td>
                 <td><strong>{event.browser} / {event.os}</strong><small>{event.device}</small>{event.session ? <a class="session" href={href({ session: event.session, q: "", type: "", page: "", from: new Date(Date.now() - RETENTION_DAYS * 86400000).toISOString().slice(0, 10), to: today })}>View session {event.session.slice(0, 8)} →</a> : <small>No session recorded</small>}</td>
               </tr>)}</tbody>
             </table> : <div class="empty"><h3>No matching activity</h3><p>Try a wider date range or clear the filters. New tracking starts when this version is deployed.</p></div>}
@@ -146,7 +146,8 @@ const geolite = Boolean(process.env.MAXMIND_ACCOUNT_ID && process.env.MAXMIND_LI
           <h2>Collection status</h2>
           <p><strong>{health ? "Storage connected" : "Storage unavailable"}</strong> · {health?.count.toLocaleString() || "0"} current events retained. Last stored event: {health?.lastWrite ? formatTime(health.lastWrite) : "None yet"}.</p>
           <p>Current history keeps up to {RETENTION_DAYS} days and {MAX_EVENTS.toLocaleString()} events, whichever limit is reached first. {Number(health?.capacityRemoved || 0).toLocaleString()} events have been removed by the capacity limit.</p>
-          <p>{geolite ? "Free MaxMind GeoLite enabled, with Vercel fallback. Lookups are cached for 24 hours and capped at 900 per UTC day." : "Using Vercel city/ZIP estimates. Free MaxMind GeoLite can be enabled with an account ID and license key."}</p>
+          <p>{geolite ? "Vercel city/ZIP estimates with a free MaxMind GeoLite comparison. GeoLite lookups are cached for 24 hours and capped at 900 per UTC day." : "Using Vercel city/ZIP estimates. Free MaxMind GeoLite can be enabled with an account ID and license key."}</p>
+          <p>Vercel is shown first; both providers’ results stay visible when available. Neither is automatically more accurate. Conflicting fields are flagged, and missing fields remain unknown.</p>
           <p>Locations and postal codes are estimates. A more specific city name does not prove greater accuracy. No raw IP addresses, precise coordinates, or full user-agent strings are stored in visit records.</p>
           <p>Production only. Do Not Track and Global Privacy Control are respected. Signing in excludes this browser from custom tracking for one year, including after sign-out. Google Analytics is separate.</p>
           <p>Sessions expire after 30 minutes of inactivity and are scoped to a browser tab. The source is the session’s entry referrer or UTM campaign; it is not Google Analytics’ first-user attribution. Blocked scripts, failed delivery, and bots mean this is not a complete count of people.</p>
@@ -182,7 +183,7 @@ const geolite = Boolean(process.env.MAXMIND_ACCOUNT_ID && process.env.MAXMIND_LI
   table { border-collapse: collapse; width: 100%; text-align: left; } th { background: #f9fafb; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: #596771; white-space: nowrap; }
   th, td { padding: 16px; border-bottom: 1px solid #e7ecee; vertical-align: top; } tr:last-child td { border-bottom: 0; } td { font-size: 12px; min-width: 180px; max-width: 330px; overflow-wrap: anywhere; }
   td strong { font-weight: 600; } td small, .destination { display: block; margin-top: 4px; } time { white-space: nowrap; } .badge { display: table; padding: 3px 8px; border-radius: 5px; color: #285c63; background: #eaf3f4; margin-top: 8px; font-size: 10px; font-weight: 650; }
-  .outbound { background: #e9f4e9; color: #426a35; } .destination { color: #07665e; } .session { display: inline-block; margin-top: 8px; } summary { color: #07665e; cursor: pointer; margin-top: 6px; }
+  .outbound { background: #e9f4e9; color: #426a35; } .destination { color: #07665e; } .session { display: inline-block; margin-top: 8px; }
   .pagination { margin: 18px 0 30px; font-size: 12px; } .pagination div { display: flex; gap: 10px; } .notes { padding: 22px; color: #596771; font-size: 12px; } .notes h2 { color: #18232c; }
   .notice { padding: 14px 18px; background: #fff6df; border-radius: 8px; font-size: 12px; } .empty { text-align: center; padding: 60px 25px; color: #596771; }
   .login { max-width: 460px; margin: 70px auto; padding: 30px; } .login form { display: grid; gap: 18px; margin-top: 24px; } .error { color: #982c30; padding: 20px; margin: 20px 0; }

@@ -76,8 +76,12 @@ the IP. The raw IP is sent to MaxMind for this optional lookup but not stored in
 the event or cache key. Respect the account's actual quota, which can change and
 may also be consumed by other applications.
 
-The dashboard preserves the GeoLite and Vercel estimates separately, including
-GeoLite's accuracy radius when supplied. It never substitutes a neighborhood
+The dashboard shows Vercel first and GeoLite alongside it, with both estimates
+visible and conflicting city, ZIP, region, or country fields flagged. Display
+order does not establish which provider is correct. Existing records use the
+same presentation without rewriting their stored estimates. Missing fields do
+not count as disagreements. GeoLite's accuracy radius stays visible when supplied.
+The dashboard never substitutes a neighborhood
 from an estimated ZIP or combines a Vercel ZIP with a GeoLite city. Missing
 credentials, missing city data, quota exhaustion, or lookup failure use Vercel.
 This does not guarantee more precise or accurate city names; compare providers
